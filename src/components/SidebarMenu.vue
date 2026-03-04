@@ -1,25 +1,22 @@
 <template>
-  <v-navigation-drawer permanent :width="175" color="#d8eefe">
+  <v-navigation-drawer permanent class="custom-sidebar">
     <v-list>
-      <v-list-item>Справочники</v-list-item>
+      <v-list-item class="mb-2 text-center">{{ userDisplayName }}</v-list-item>
       <v-divider/>
       <v-list-item v-if="isAdmin" to="/aggregators" class="custom-list-item">Агрегаторы</v-list-item>
-      <v-list-item to="/statuses" class="custom-list-item">Статусы</v-list-item>
-      <v-list-item to="/couriers" class="custom-list-item">Курьеры</v-list-item>
-      <v-list-item v-if="isAdmin" to="/couriers-aggregator" class="custom-list-item">Курьеры-агрегаторы</v-list-item>
-      <v-list-item v-if="isAdmin" to="/request-logs" class="custom-list-item">Логи</v-list-item>
-      <v-list-item v-if="isAdmin" to="/courier-shift" class="custom-list-item">Средства передвижения</v-list-item>
-      <v-list-item v-if="isAdmin" to="/courier-violations" class="custom-list-item">Нарушения курьера</v-list-item>
       <v-list-item v-if="isAdmin" to="/driver-license" class="custom-list-item">Водительские права</v-list-item>
+      <v-list-item to="/couriers" class="custom-list-item">Курьеры</v-list-item>
+      <v-list-item v-if="isAdmin" to="/couriers-aggregator" class="custom-list-item">Курьеры-агрегаторов</v-list-item>
+      <v-list-item v-if="isAdmin" to="/request-logs" class="custom-list-item">Логи</v-list-item>
+      <v-list-item v-if="isAdmin" to="/courier-violations" class="custom-list-item">Нарушения курьера</v-list-item>
       <v-list-item v-if="isAdmin" to="/passport" class="custom-list-item">Паспорт</v-list-item>
+      <v-list-item v-if="isAdmin" to="/courier-shift" class="custom-list-item">Средства передвижения</v-list-item>
+      <v-list-item to="/statuses" class="custom-list-item">Статусы</v-list-item>
       <v-list-item v-if="isAdmin" to="/violations-type" class="custom-list-item">Типы нарушений</v-list-item>
     </v-list>
 
     <template v-slot:append>
       <div class="pa-2">
-        <div class="mb-2 text-caption text-center" style="color: #094067;">
-          {{ userDisplayName }}
-        </div>
         <v-btn
             @click="handleLogout"
             color="#0562AA"
@@ -112,22 +109,24 @@ const handleLogout = async () => {
   transition: all 0.3s ease;
 }
 
+.custom-sidebar {
+  max-width: 220px;
+  background-color: #d8eefe;
+}
+
 .custom-list-item:hover {
-  background-color: #add7f5 !important;
+  background-color: #add7f5;
   color: white !important;
 }
 :deep(.v-list-item--active) {
-  background-color: #83c2ef !important;
-  color: white !important;
+  background-color: #83c2ef;
+  color: white;
 }
 
 :deep(.v-list-item--active .v-list-item-title) {
-  color: white !important;
+  color: white;
 }
 
-.v-navigation-drawer {
-  border-right: 1px solid rgba(0, 0, 0, 0.12);
-}
 
 .text-caption {
   font-size: 0.75rem;

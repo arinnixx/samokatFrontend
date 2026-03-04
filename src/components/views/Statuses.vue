@@ -4,6 +4,7 @@
         title="Статусы"
         :headers="columns"
         :items="statusesList"
+        :loading="loading"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -27,6 +28,7 @@ export default {
   data(){
     return{
       statusesList: [],
+      loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
         {key: 'deleted_at', title: 'Дата удаления '},

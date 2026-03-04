@@ -1,7 +1,7 @@
 <template>
   <div class="table-wrapper">
     <h2 class="text-center">{{ title }}</h2>
-    <v-card class="mx-auto wide-card">
+    <v-card class="mx-auto mb-8 wide-card">
       <v-data-table
           :headers="headers"
           :items="normalizedItems"
@@ -101,8 +101,8 @@ h2 {
 }
 
 :deep(.v-data-table__th) {
-  background-color: #0562AA !important;
-  color: white !important;
+  background-color: #0562AA;
+  color: white;
 }
 
 

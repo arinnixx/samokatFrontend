@@ -1,9 +1,10 @@
 <template>
-  <v-main color="#f9e4ff">
+  <v-main>
     <DataTable
-        title="Паспорт"
+        title="Типы нарушений"
         :headers="columns"
         :items="violationsTypeList"
+        :loading="loading"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -27,6 +28,7 @@ export default {
   data(){
     return{
       violationsTypeList: [],
+      loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
         {key: 'deleted_at', title: 'Дата удаления'},

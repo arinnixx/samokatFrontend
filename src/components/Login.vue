@@ -1,9 +1,9 @@
 <template>
-  <v-main class="d-flex align-center justify-center" style="min-height: 100vh; background: linear-gradient(135deg, rgba(73, 171, 247, 0.7) 40%, rgba(13, 141, 239, 0.7) 60%);">
+  <v-main class="gradient">
     <v-sheet class="mx-auto" width="450" elevation="12" rounded="xl">
       <v-card color="white" class="pa-6" rounded="xl">
         <v-card-title class="text-center justify-center py-4">
-          <h1 class="font-weight-bold text-h3 my-0" style="color: #094067;">
+          <h1 class="color-font" >
             Вход
           </h1>
         </v-card-title>
@@ -153,9 +153,9 @@
 <script>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/authStore.js";
-import axios from 'axios';
-import Cookies from 'js-cookie';
 import { useRouter } from "vue-router";
+import Cookies from 'js-cookie';
+import apiLogin from "@/api/api_login.js";
 
 export default {
   name: 'Login',
@@ -188,18 +188,10 @@ export default {
       errorMessage.value = '';
 
       try {
-        const response = await axios.post('http://localhost:3002/aggregator/login', {
-          login: aggregatorLogin.value,
-          password: aggregatorPassword.value,
-        }, {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
+        const data = await apiLogin.aggregatorLogin(aggregatorLogin.value, aggregatorPassword.value);
 
-        if (response.status === 200 && response.data.token) {
-          const { token, aggregator } = response.data;
+        if (data && data.token) {
+          const { token, aggregator } = data;
 
           Cookies.set('token', token, { expires: 7, path: '/' });
           authStore.setToken(token);
@@ -237,18 +229,10 @@ export default {
       errorMessage.value = '';
 
       try {
-        const response = await axios.post('http://localhost:3002/admin/login', {
-          login: adminLogin.value,
-          password: adminPassword.value,
-        }, {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
+        const data = await apiLogin.adminLogin(adminLogin.value, adminPassword.value);
 
-        if (response.status === 200 && response.data.token) {
-          const { token, admin } = response.data;
+        if (data && data.token) {
+          const { token, admin } = data;
 
           Cookies.set('token', token, { expires: 7, path: '/' });
           authStore.setToken(token);
@@ -316,12 +300,20 @@ export default {
 </script>
 
 <style scoped>
-h2 {
-  text-align: center;
+.gradient {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(73, 171, 247, 0.4) 40%, rgba(13, 141, 239, 0.4) 60%);
+}
+
+.color-font{
   color: #094067;
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin-bottom: 2rem;
+  font-weight: bold;
+  font-size: 3rem;
+  margin-bottom: 0;
+  margin-top: 0;
 }
 
 .error-message {
@@ -346,27 +338,27 @@ h2 {
 }
 
 :deep(.v-tab--selected) {
-  color: #0562AA !important;
+  color: #0562AA;
 }
 
 :deep(.v-tab.v-tab--selected .v-tab__slider) {
-  background-color: #0562AA !important;
+  background-color: #0562AA;
 }
 
 :deep(.v-field__prepend-inner) {
-  color: #0562AA !important;
+  color: #0562AA;
 }
 
 :deep(.v-field__prepend-inner .v-icon) {
-  font-size: 20px !important;
+  font-size: 20px;
 }
 
 :deep(.v-field--variant-outlined .v-field__outline) {
-  color: #0562AA !important;
+  color: #0562AA;
 }
 
 :deep(.v-field--focused .v-field__outline) {
-  color: #0562AA !important;
-  border-width: 2px !important;
+  color: #0562AA;
+  border-width: 2px;
 }
 </style>

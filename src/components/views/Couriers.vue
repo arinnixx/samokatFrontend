@@ -4,6 +4,7 @@
         title="Курьеры"
         :headers="columns"
         :items="couriersList"
+        :loading="loading"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -31,6 +32,7 @@ export default {
   data(){
     return{
       couriersList: [],
+      loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
         {key: 'deleted_at', title: 'Дата удаления'},

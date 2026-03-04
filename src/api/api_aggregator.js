@@ -1,7 +1,7 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const API_URL ='http://localhost:3002/aggregator'
+const API_URL =import.meta.env.VITE_APP_API_URL_PRIVATE;
 
 const axiosInstance = axios.create({
     withCredentials: true,
@@ -28,7 +28,7 @@ const handleAuthError = (error) => {
 export default {
     async getAllAggregators () {
         try{
-            const response = await axiosInstance.get(`${API_URL}`, getAuthHeader());
+            const response = await axiosInstance.get(`${API_URL}/aggregator`, getAuthHeader());
             return response.data;
         }catch(error){
             console.error(error);

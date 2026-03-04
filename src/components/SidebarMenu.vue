@@ -40,6 +40,8 @@ import Cookies from 'js-cookie';
 const router = useRouter();
 const authStore = useAuthStore();
 const logoutLoading = ref(false);
+const API_URL =import.meta.env.VITE_APP_API_URL_PRIVATE;
+
 
 const isAdmin = computed(() => {
   return !!localStorage.getItem('admin');
@@ -76,8 +78,8 @@ const handleLogout = async () => {
 
     if (token) {
       const logoutEndpoint = isAdminUser
-          ? 'http://localhost:3002/admin/logout'
-          : 'http://localhost:3002/aggregator/logout';
+          ? `${API_URL}/admin/logout`
+          : `${API_URL}/aggregator/logout`;
 
       await axios.post(logoutEndpoint, {}, {
         headers: {

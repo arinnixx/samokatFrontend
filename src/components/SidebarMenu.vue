@@ -3,7 +3,7 @@
     <v-list>
       <v-list-item class="custom">{{ userDisplayName }}</v-list-item>
       <v-divider/>
-      <v-list-group v-if="isAdmin"  value="Справочники">
+      <v-list-group value="Справочники">
         <template v-slot:activator="{ props, isOpen }">
           <v-list-item v-bind="props" class="custom-list-item">
             <template v-slot:append>
@@ -17,7 +17,7 @@
           </v-list-item>
         </template>
 
-        <v-list-item to="/violations-type" class="custom-list-item">
+        <v-list-item v-if="isAdmin" to="/violations-type" class="custom-list-item">
           <v-list-item-title>Типы нарушений</v-list-item-title>
         </v-list-item>
 
@@ -25,7 +25,7 @@
           <v-list-item-title>Статусы</v-list-item-title>
         </v-list-item>
 
-        <v-list-item to="/courier-shift" class="custom-list-item">
+        <v-list-item v-if="isAdmin" to="/courier-shift" class="custom-list-item">
           <v-list-item-title>Типы транспорта</v-list-item-title>
         </v-list-item>
       </v-list-group>
@@ -163,7 +163,5 @@ const handleLogout = async () => {
   background-color: #77c9fc70;
 
 }
-
-
 
 </style>

@@ -28,7 +28,6 @@
                   class="mb-4"
                   rounded="lg"
                   required
-                  prepend-inner-icon="mdi-account"
               ></v-text-field>
 
               <v-text-field
@@ -38,7 +37,6 @@
                   class="mb-4"
                   rounded="lg"
                   required
-                  prepend-inner-icon="mdi-lock"
               >
                 <template v-slot:append-inner>
                   <button @click="aggregatorVisible = !aggregatorVisible" class="custom-eye-button" type="button">
@@ -83,7 +81,6 @@
                   class="mb-4"
                   rounded="lg"
                   required
-                  prepend-inner-icon="mdi-account-cog"
               ></v-text-field>
 
               <v-text-field
@@ -93,7 +90,6 @@
                   class="mb-4"
                   rounded="lg"
                   required
-                  prepend-inner-icon="mdi-lock"
               >
                 <template v-slot:append-inner>
                   <button @click="adminVisible = !adminVisible" class="custom-eye-button" type="button">
@@ -335,26 +331,6 @@ export default {
   font-weight: 600;
   text-transform: none;
   font-size: 1rem;
-}
-
-:deep(.v-tab--selected) {
-  color: #0562AA;
-}
-
-:deep(.v-tab.v-tab--selected .v-tab__slider) {
-  background-color: #0562AA;
-}
-
-:deep(.v-field__prepend-inner) {
-  color: #0562AA;
-}
-
-:deep(.v-field__prepend-inner .v-icon) {
-  font-size: 20px;
-}
-
-:deep(.v-field--variant-outlined .v-field__outline) {
-  color: #0562AA;
 }
 
 :deep(.v-field--focused .v-field__outline) {

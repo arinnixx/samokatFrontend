@@ -10,10 +10,6 @@
         {{ formatDate(item.created_at) }}
       </template>
 
-      <template v-slot:item.deleted_at="{ item }">
-        {{ formatDate(item.deleted_at) }}
-      </template>
-
       <template v-slot:item.closed_at="{ item }">
         {{ formatDate(item.closed_at) }}
       </template>
@@ -41,8 +37,7 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'deleted_at', title: 'Дата удаления'},
-        {key: 'id', title: 'ID'},
+        {key: 'id', title: 'Id'},
         {key: 'movement_type', title: 'Тип передвижения'},
         {key: 'vehicle_number', title: 'Номер ТС'},
         {key: 'bag_number', title: 'Номер сумки'},

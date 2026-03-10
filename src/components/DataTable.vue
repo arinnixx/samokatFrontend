@@ -1,13 +1,15 @@
 <template>
   <div class="table-wrapper">
     <h2 class="text-center">{{ title }}</h2>
-    <v-card class="mx-auto mb-8 wide-card">
+    <v-card class="mx-auto mb-8 wide-card" flat rounded="lg">
       <v-data-table
           :headers="headers"
           :items="normalizedItems"
           :items-per-page="itemsPerPage"
           :loading="loading"
-          class="elevation-1"
+          class="custom-border"
+          items-per-page-text="Записей на странице:"
+          page-text="{0}-{1} из {2}"
       >
 
         <template v-for="(_, name) in $slots" #[name]="slotData">
@@ -84,6 +86,10 @@ const normalizedItems = computed(() => {
   flex-direction: column;
   align-items: center;
   padding: 0 20px;
+}
+
+.custom-border {
+  border: 1px solid #0562AA;
 }
 
 h2 {

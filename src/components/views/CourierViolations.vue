@@ -10,8 +10,8 @@
         {{ formatDate(item.created_at) }}
       </template>
 
-      <template v-slot:item.deleted_at="{ item }">
-        {{ formatDate(item.deleted_at) }}
+      <template v-slot:item.violation_date="{ item }">
+        {{ formatDate(item.violation_date) }}
       </template>
 
       <template v-slot:item.courier_id="{ item }">
@@ -43,9 +43,8 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'deleted_at', title: 'Дата удаления'},
-        {key: 'id', title: 'ID'},
-        {key: 'violation_date', title: 'Код'},
+        {key: 'id', title: 'Id'},
+        {key: 'violation_date', title: 'Дата нарушения'},
         {key: 'incident_details', title: 'Описание нарушения'},
         {key: 'operator_comment', title: 'Комментарий оператора'},
         {key: 'courier_id', title: 'Курьер'},

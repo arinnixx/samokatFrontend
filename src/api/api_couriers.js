@@ -39,7 +39,7 @@ export default {
 
     async getCouriersByAggregator (aggregatorId) {
         try{
-            const response = await axiosInstance.get(`${API_URL}/by-aggregator/${aggregatorId}`, getAuthHeader());
+            const response = await axiosInstance.get(`${API_URL}/couriers/by-aggregator/${aggregatorId}`, getAuthHeader());
             return response.data;
         }catch(error){
             console.error(error);

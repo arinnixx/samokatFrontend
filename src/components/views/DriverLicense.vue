@@ -10,10 +10,6 @@
         {{ formatDate(item.created_at) }}
       </template>
 
-      <template v-slot:item.deleted_at="{ item }">
-        {{ formatDate(item.deleted_at) }}
-      </template>
-
       <template v-slot:item.issueDate="{ item }">
         {{ formatDate(item.issueDate) }}
       </template>
@@ -45,8 +41,7 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'deleted_at', title: 'Дата удаления'},
-        {key: 'id', title: 'ID'},
+        {key: 'id', title: 'Id'},
         {key: 'country', title: 'Государство выдавшее ВУ'},
         {key: 'series', title: 'Серия ВУ'},
         {key: 'number', title: 'Номер ВУ'},

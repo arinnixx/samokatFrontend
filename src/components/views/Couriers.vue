@@ -10,10 +10,6 @@
         {{ formatDate(item.created_at) }}
       </template>
 
-      <template v-slot:item.deleted_at="{ item }">
-        {{ formatDate(item.deleted_at) }}
-      </template>
-
       <template v-slot:item.birthDate="{ item }">
         {{ formatDate(item.birthDate) }}
       </template>
@@ -35,7 +31,6 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'deleted_at', title: 'Дата удаления'},
         {key: 'id', title: 'Id'},
         {key: 'lastName', title: 'Фамилия'},
         {key: 'firstName', title: 'Имя'},
@@ -51,12 +46,10 @@ export default {
     }
   },
   computed: {
-    // Правильное использование computed в Options API
     isAggregator() {
       return !!localStorage.getItem('aggregator');
     },
 
-    // Получаем ID агрегатора из localStorage
     aggregatorId() {
       const aggregator = JSON.parse(localStorage.getItem('aggregator') || '{}');
       return aggregator.id || null;
@@ -69,11 +62,9 @@ export default {
     async fetchCouriers(){
       try{
         if (this.isAggregator && this.aggregatorId) {
-          // Если это агрегатор - получаем только его курьеров
           console.log('Загрузка курьеров для агрегатора ID:', this.aggregatorId);
           this.couriersList = await api.getCouriersByAggregator(this.aggregatorId);
         } else {
-          // Если это администратор - получаем всех курьеров
           console.log('Загрузка всех курьеров');
           this.couriersList = await api.getAllCouriers();
         }

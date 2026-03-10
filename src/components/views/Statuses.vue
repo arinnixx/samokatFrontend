@@ -9,10 +9,6 @@
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
       </template>
-
-      <template v-slot:item.deleted_at="{ item }">
-        {{ formatDate(item.deleted_at) }}
-      </template>
     </DataTable>
   </v-main>
 </template>
@@ -31,7 +27,6 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'deleted_at', title: 'Дата удаления '},
         {key: 'id', title: 'Id'},
         {key: 'status_name', title: 'Наименование статуса'},
       ]

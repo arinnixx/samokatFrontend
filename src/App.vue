@@ -1,7 +1,7 @@
 <template>
   <v-app>
-    <SidebarMenu v-if="showSidebar" />
-    <v-main class="padd" >
+    <v-main class="custom-padding" >
+      <SidebarMenu v-if="showSidebar" />
       <router-view />
     </v-main>
   </v-app>
@@ -19,9 +19,11 @@ const showSidebar = computed(()=>route.meta.showSidebar ===true)
 </script>
 
 <style scoped>
-.padd{
+.custom-padding{
   padding: 0px;
 }
+
+
 
 .v-application{
   background: #fff;

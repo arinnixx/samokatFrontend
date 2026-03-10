@@ -10,10 +10,6 @@
         {{ formatDate(item.created_at) }}
       </template>
 
-      <template v-slot:item.deleted_at="{ item }">
-        {{ formatDate(item.deleted_at) }}
-      </template>
-
       <template v-slot:item.start_date="{ item }">
         {{ formatDate(item.start_date) }}
       </template>
@@ -51,8 +47,7 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'deleted_at', title: 'Дата удаления'},
-        {key: 'id', title: 'ID'},
+        {key: 'id', title: 'Id'},
         {key: 'start_date', title: 'Дата начала работы'},
         {key: 'end_date', title: 'Дата окончания работы'},
         {key: 'couriers_id', title: 'Курьер'},

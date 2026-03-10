@@ -12,62 +12,112 @@ import DriverLicense from "@/components/views/DriverLicense.vue";
 import Passport from "@/components/views/Passport.vue";
 import ViolationsType from "@/components/views/ViolationsType.vue";
 
+// Определяем роли
+const ROLES = {
+    ADMIN: 'admin',
+    AGGREGATOR: 'aggregator'
+};
+
+// Маршруты с указанием доступных ролей
 const routes = [
     {
         path: '/',
         name: 'Login',
         component: Login,
-        meta: { requiresAuth: false, showSidebar: false }
+        meta: {
+            requiresAuth: false,
+            showSidebar: false
+        }
     },
     {
-        path:'/aggregators',
+        path: '/aggregators',
         component: Aggregators,
-        meta: { requiresAuth: true, showSidebar: true },
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+        }
     },
     {
-        path:'/statuses',
+        path: '/statuses',
         component: Statuses,
-        meta: { requiresAuth: true, showSidebar: true },
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN, ROLES.AGGREGATOR] // АДМИН И АГРЕГАТОР
+        }
     },
     {
-        path:'/couriers',
+        path: '/couriers',
         component: Couriers,
-        meta: { requiresAuth: true, showSidebar: true },
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN, ROLES.AGGREGATOR] // АДМИН И АГРЕГАТОР
+        }
     },
     {
-        path:'/couriers-aggregator',
+        path: '/couriers-aggregator',
         component: CouriersAggregator,
-        meta: { requiresAuth: true, showSidebar: true },
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+        }
     },
     {
-        path:'/request-logs',
+        path: '/request-logs',
         component: RequestLogs,
-        meta: { requiresAuth: true, showSidebar: true },
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+        }
     },
     {
-        path:'/courier-shift',
+        path: '/courier-shift',
         component: CourierShift,
-        meta: { requiresAuth: true, showSidebar: true },
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+        }
     },
     {
-        path:'/courier-violations',
+        path: '/courier-violations',
         component: CourierViolations,
-        meta: { requiresAuth: true, showSidebar: true },
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+        }
     },
     {
-        path:'/driver-license',
+        path: '/driver-license',
         component: DriverLicense,
-        meta: { requiresAuth: true, showSidebar: true },
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+        }
     },
     {
-        path:'/passport',
+        path: '/passport',
         component: Passport,
-        meta: { requiresAuth: true, showSidebar: true },
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+        }
     },
     {
-        path:'/violations-type',
+        path: '/violations-type',
         component: ViolationsType,
-        meta: { requiresAuth: true, showSidebar: true },
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+        }
     }
 ];
 
@@ -81,16 +131,53 @@ const hasToken = () => {
     return !!(Cookies.get('token') || localStorage.getItem('authToken'));
 };
 
-router.beforeEach((to, from) => {
+// Получение роли пользователя
+const getUserRole = () => {
+    return localStorage.getItem('userType');
+};
+
+router.beforeEach((to, from, next) => {
     const isAuthenticated = hasToken();
+    const userRole = getUserRole();
 
-    if (to.path === '/dashboard' && !isAuthenticated) {
-        return '/';
+    console.log('Навигация:', to.path);
+    console.log('Роль пользователя:', userRole);
+    console.log('Авторизован:', isAuthenticated);
+
+    // Если не требует авторизации (логин)
+    if (!to.meta.requiresAuth) {
+        // Если уже авторизован, перенаправляем на доступную страницу
+        if (isAuthenticated) {
+            if (userRole === ROLES.ADMIN) {
+                return next('/aggregators');
+            } else {
+                return next('/statuses'); // Агрегатор на статусы
+            }
+        }
+        return next();
     }
 
-    if (to.path === '/' && isAuthenticated) {
-        return '/dashboard';
+    // Если требует авторизации, но пользователь не авторизован
+    if (to.meta.requiresAuth && !isAuthenticated) {
+        return next('/?sessionExpired=true');
     }
+
+    // Проверка ролей
+    if (to.meta.allowedRoles && userRole) {
+        if (!to.meta.allowedRoles.includes(userRole)) {
+            console.log('Доступ запрещен для роли', userRole);
+
+            // Перенаправляем на доступную страницу в зависимости от роли
+            if (userRole === ROLES.ADMIN) {
+                return next('/aggregators');
+            } else {
+                return next('/statuses'); // Агрегатор на статусы
+            }
+        }
+    }
+
+    // Все проверки пройдены
+    next();
 });
 
 export default router;

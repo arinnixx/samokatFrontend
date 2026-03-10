@@ -1,8 +1,34 @@
 <template>
   <v-navigation-drawer permanent class="custom-sidebar">
     <v-list>
-      <v-list-item class="mb-2 text-center">{{ userDisplayName }}</v-list-item>
+      <v-list-item class="custom">{{ userDisplayName }}</v-list-item>
       <v-divider/>
+      <v-list-group v-if="isAdmin"  value="Справочники">
+        <template v-slot:activator="{ props, isOpen }">
+          <v-list-item v-bind="props" class="custom-list-item">
+            <template v-slot:append>
+              <img
+                  :src="isOpen ? '/src/components/icons/up-arrow.svg' : '/src/components/icons/down-arrow.svg'"
+                  width="24"
+                  height="24"
+              >
+            </template>
+            <v-list-item-title >Справочники</v-list-item-title>
+          </v-list-item>
+        </template>
+
+        <v-list-item to="/violations-type" class="custom-list-item">
+          <v-list-item-title>Типы нарушений</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item to="/statuses" class="custom-list-item">
+          <v-list-item-title>Статусы</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item to="/courier-shift" class="custom-list-item">
+          <v-list-item-title>Типы транспорта</v-list-item-title>
+        </v-list-item>
+      </v-list-group>
       <v-list-item v-if="isAdmin" to="/aggregators" class="custom-list-item">Агрегаторы</v-list-item>
       <v-list-item v-if="isAdmin" to="/driver-license" class="custom-list-item">Водительские права</v-list-item>
       <v-list-item to="/couriers" class="custom-list-item">Курьеры</v-list-item>
@@ -10,9 +36,6 @@
       <v-list-item v-if="isAdmin" to="/request-logs" class="custom-list-item">Логи</v-list-item>
       <v-list-item v-if="isAdmin" to="/courier-violations" class="custom-list-item">Нарушения курьера</v-list-item>
       <v-list-item v-if="isAdmin" to="/passport" class="custom-list-item">Паспорт</v-list-item>
-      <v-list-item v-if="isAdmin" to="/courier-shift" class="custom-list-item">Средства передвижения</v-list-item>
-      <v-list-item to="/statuses" class="custom-list-item">Статусы</v-list-item>
-      <v-list-item v-if="isAdmin" to="/violations-type" class="custom-list-item">Типы нарушений</v-list-item>
     </v-list>
 
     <template v-slot:append>
@@ -111,30 +134,36 @@ const handleLogout = async () => {
   transition: all 0.3s ease;
 }
 
+.custom-list-group {
+  border-radius: 10px;
+  margin: 4px 8px;
+  transition: all 0.3s ease;
+  padding-left: 0;
+}
+
+.custom {
+  text-align: center;
+  color: #094067;
+  font-weight: 600;
+  width: 100%;
+
+}
+
 .custom-sidebar {
   max-width: 220px;
-  background-color: #d8eefe;
+  background-color: #d8eefe70;
+
 }
 
 .custom-list-item:hover {
   background-color: #add7f5;
-  color: white !important;
+
 }
 :deep(.v-list-item--active) {
-  background-color: #83c2ef;
-  color: white;
-}
+  background-color: #77c9fc70;
 
-:deep(.v-list-item--active .v-list-item-title) {
-  color: white;
 }
 
 
-.text-caption {
-  font-size: 0.75rem;
-  opacity: 0.8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+
 </style>

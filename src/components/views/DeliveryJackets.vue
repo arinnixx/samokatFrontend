@@ -1,25 +1,13 @@
 <template>
   <v-main>
     <DataTable
-        title="Работа"
+        title="Куртки курьеров"
         :headers="columns"
-        :items="couriersAggregatorList"
+        :items="deliveryJacketsList"
         :loading="loading"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
-      </template>
-
-      <template v-slot:item.start_date="{ item }">
-        {{ formatDate(item.start_date) }}
-      </template>
-
-      <template v-slot:item.end_date="{ item }">
-        {{ formatDate(item.end_date) }}
-      </template>
-
-      <template v-slot:item.couriers_id="{ item }">
-        {{ getCourierName(item.couriers_id) }}
       </template>
 
       <template v-slot:item.aggregator_id="{ item }">
@@ -31,8 +19,7 @@
 
 <script>
 import DataTable from '@/components/DataTable.vue'
-import api from "@/api/api_couriersAggregator.js";
-import apiCouriers from "@/api/api_couriers.js";
+import api from "@/api/api_deliveryJackets.js";
 import apiAggregators from "@/api/api_aggregator.js";
 
 export default {
@@ -41,17 +28,14 @@ export default {
   },
   data(){
     return{
-      couriersAggregatorList: [],
-      couriersMap: {},
+      deliveryJacketsList: [],
       aggregatorsMap: {},
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
         {key: 'id', title: 'Id'},
-        {key: 'start_date', title: 'Дата начала работы'},
-        {key: 'end_date', title: 'Дата окончания работы'},
-        {key: 'couriers_id', title: 'Курьер'},
-        {key: 'aggregator_id', title: 'Агрегатор'},
+        {key: 'code', title: 'Код куртки'},
+        {key: 'aggregator_id', title: 'Аггрегатор'},
       ]
     }
   },
@@ -63,8 +47,7 @@ export default {
       this.loading = true;
       try {
         await Promise.all([
-          this.fetchCouriersAggregator(),
-          this.fetchCouriers(),
+          this.fetchDeliveryJackets(),
           this.fetchAggregators()
         ]);
       } catch (error) {
@@ -74,41 +57,11 @@ export default {
       }
     },
 
-    async fetchCouriersAggregator(){
+    async fetchDeliveryJackets(){
       try{
-        const response = await api.getAllCouriersAggregator();
-        this.couriersAggregatorList = response?.items || response || [];
-        console.log('Загружено связей:', this.couriersAggregatorList.length);
+        this.deliveryJacketsList = await api.getAllDeliveryJackets();
       }catch(error){
-        console.error('Ошибка загрузки связей:', error);
-        this.couriersAggregatorList = [];
-      }
-    },
-
-    async fetchCouriers(){
-      try{
-        const response = await apiCouriers.getAllCouriers();
-        console.log('Ответ API курьеров:', response);
-
-        let couriersArray = [];
-        if (response?.items) {
-          couriersArray = response.items;
-        } else if (Array.isArray(response)) {
-          couriersArray = response;
-        } else {
-          couriersArray = [];
-        }
-
-        couriersArray.forEach(courier => {
-          if (courier && courier.id) {
-            const fullName = `${courier.lastName || ''} ${courier.firstName || ''}`.trim();
-            this.couriersMap[courier.id] = fullName || `Курьер #${courier.id}`;
-          }
-        });
-
-        console.log('Загружено курьеров:', Object.keys(this.couriersMap).length);
-      }catch(error){
-        console.error('Ошибка загрузки курьеров:', error);
+        console.error(error)
       }
     },
 
@@ -138,11 +91,6 @@ export default {
       }
     },
 
-    getCourierName(id) {
-      if (!id) return '—';
-      return this.couriersMap[id] || `ID: ${id}`;
-    },
-
     getAggregatorName(id) {
       if (!id) return '—';
       return this.aggregatorsMap[id] || `ID: ${id}`;
@@ -150,7 +98,9 @@ export default {
 
     formatDate(timestamp) {
       if (!timestamp) return '—';
+
       const date = new Date(parseInt(timestamp) * 1000);
+
       return date.toLocaleString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
@@ -159,4 +109,5 @@ export default {
     }
   }
 }
+
 </script>

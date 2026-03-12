@@ -13,6 +13,10 @@
       <template v-slot:item.birthDate="{ item }">
         {{ formatDate(item.birthDate) }}
       </template>
+
+      <template v-slot:item.fullName="{ item }">
+        {{ getFullName(item) }}
+      </template>
     </DataTable>
   </v-main>
 </template>
@@ -32,16 +36,14 @@ export default {
       columns: [
         {key: 'created_at', title: 'Дата создания'},
         {key: 'id', title: 'Id'},
-        {key: 'lastName', title: 'Фамилия'},
-        {key: 'firstName', title: 'Имя'},
-        {key: 'middleName', title: 'Отчество'},
+        {key: 'fullName', title: 'ФИО'},
         {key: 'gender', title: 'Пол'},
-        {key: 'citizenship', title: 'Гражданство'},
         {key: 'phone', title: 'Номер телефона'},
-        {key: 'birthDate', title: 'Дата рождения'},
         {key: 'email', title: 'Почта'},
         {key: 'snils', title: 'Снилс'},
         {key: 'inn', title: 'ИНН'},
+        {key: 'passport_id', title: 'Паспорт'},
+        {key: 'driverLicense_id', title: 'Водительские права'},
       ]
     }
   },
@@ -73,6 +75,16 @@ export default {
         console.error('Ошибка загрузки курьеров:', error);
         this.couriersList = [];
       }
+    },
+
+    getFullName(item){
+      const lastName = item.lastName || '';
+      const firstName = item.firstName || '';
+      const middleName = item.middleName || '';
+
+      const fullName = `${lastName} ${firstName} ${middleName}`.trim();
+
+      return fullName || '—';
     },
 
     formatDate(timestamp) {

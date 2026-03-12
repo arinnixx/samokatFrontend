@@ -37,7 +37,6 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'id', title: 'Id'},
         {key: 'series', title: 'Серия'},
         {key: 'number', title: 'Номер ВУ'},
         {key: 'issueDate', title: 'Дата выдачи'},

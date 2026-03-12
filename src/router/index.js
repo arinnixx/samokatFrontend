@@ -6,19 +6,21 @@ import Statuses from "@/components/views/Statuses.vue";
 import Couriers from "@/components/views/Couriers.vue";
 import CouriersAggregator from "@/components/views/CouriersAggregator.vue";
 import RequestLogs from "@/components/views/RequestLogs.vue";
-import CourierShift from "@/components/views/CourierShift.vue";
 import CourierViolations from "@/components/views/CourierViolations.vue";
 import DriverLicense from "@/components/views/DriverLicense.vue";
 import Passport from "@/components/views/Passport.vue";
 import ViolationsType from "@/components/views/ViolationsType.vue";
+import DeliveryBags from "@/components/views/DeliveryBags.vue";
+import DeliveryJackets from "@/components/views/DeliveryJackets.vue";
+import Orders from "@/components/views/Orders.vue";
+import Transport from "@/components/views/Transport.vue";
+import TransportTypes from "@/components/views/TransportTypes.vue";
 
-// Определяем роли
 const ROLES = {
     ADMIN: 'admin',
     AGGREGATOR: 'aggregator'
 };
 
-// Маршруты с указанием доступных ролей
 const routes = [
     {
         path: '/',
@@ -35,7 +37,7 @@ const routes = [
         meta: {
             requiresAuth: true,
             showSidebar: true,
-            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+            allowedRoles: [ROLES.ADMIN]
         }
     },
     {
@@ -44,7 +46,7 @@ const routes = [
         meta: {
             requiresAuth: true,
             showSidebar: true,
-            allowedRoles: [ROLES.ADMIN, ROLES.AGGREGATOR] // АДМИН И АГРЕГАТОР
+            allowedRoles: [ROLES.ADMIN, ROLES.AGGREGATOR]
         }
     },
     {
@@ -53,7 +55,7 @@ const routes = [
         meta: {
             requiresAuth: true,
             showSidebar: true,
-            allowedRoles: [ROLES.ADMIN, ROLES.AGGREGATOR] // АДМИН И АГРЕГАТОР
+            allowedRoles: [ROLES.ADMIN, ROLES.AGGREGATOR]
         }
     },
     {
@@ -62,7 +64,7 @@ const routes = [
         meta: {
             requiresAuth: true,
             showSidebar: true,
-            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+            allowedRoles: [ROLES.ADMIN]
         }
     },
     {
@@ -71,16 +73,7 @@ const routes = [
         meta: {
             requiresAuth: true,
             showSidebar: true,
-            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
-        }
-    },
-    {
-        path: '/courier-shift',
-        component: CourierShift,
-        meta: {
-            requiresAuth: true,
-            showSidebar: true,
-            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+            allowedRoles: [ROLES.ADMIN]
         }
     },
     {
@@ -89,7 +82,7 @@ const routes = [
         meta: {
             requiresAuth: true,
             showSidebar: true,
-            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+            allowedRoles: [ROLES.ADMIN]
         }
     },
     {
@@ -98,7 +91,7 @@ const routes = [
         meta: {
             requiresAuth: true,
             showSidebar: true,
-            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+            allowedRoles: [ROLES.ADMIN]
         }
     },
     {
@@ -107,7 +100,7 @@ const routes = [
         meta: {
             requiresAuth: true,
             showSidebar: true,
-            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+            allowedRoles: [ROLES.ADMIN]
         }
     },
     {
@@ -116,7 +109,52 @@ const routes = [
         meta: {
             requiresAuth: true,
             showSidebar: true,
-            allowedRoles: [ROLES.ADMIN] // ТОЛЬКО АДМИН
+            allowedRoles: [ROLES.ADMIN]
+        }
+    },
+    {
+        path: '/delivery-bags',
+        component: DeliveryBags,
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN]
+        }
+    },
+    {
+        path: '/delivery-jackets',
+        component: DeliveryJackets,
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN]
+        }
+    },
+    {
+        path: '/orders',
+        component: Orders,
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN]
+        }
+    },
+    {
+        path: '/transport',
+        component: Transport,
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN]
+        }
+    },
+    {
+        path: '/transport-types',
+        component: TransportTypes,
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN]
         }
     }
 ];
@@ -126,12 +164,10 @@ const router = createRouter({
     routes
 });
 
-// Проверка наличия токена
 const hasToken = () => {
     return !!(Cookies.get('token') || localStorage.getItem('authToken'));
 };
 
-// Получение роли пользователя
 const getUserRole = () => {
     return localStorage.getItem('userType');
 };
@@ -144,39 +180,33 @@ router.beforeEach((to, from, next) => {
     console.log('Роль пользователя:', userRole);
     console.log('Авторизован:', isAuthenticated);
 
-    // Если не требует авторизации (логин)
     if (!to.meta.requiresAuth) {
-        // Если уже авторизован, перенаправляем на доступную страницу
         if (isAuthenticated) {
             if (userRole === ROLES.ADMIN) {
                 return next('/aggregators');
             } else {
-                return next('/statuses'); // Агрегатор на статусы
+                return next('/statuses');
             }
         }
         return next();
     }
 
-    // Если требует авторизации, но пользователь не авторизован
     if (to.meta.requiresAuth && !isAuthenticated) {
         return next('/?sessionExpired=true');
     }
 
-    // Проверка ролей
     if (to.meta.allowedRoles && userRole) {
         if (!to.meta.allowedRoles.includes(userRole)) {
             console.log('Доступ запрещен для роли', userRole);
 
-            // Перенаправляем на доступную страницу в зависимости от роли
             if (userRole === ROLES.ADMIN) {
                 return next('/aggregators');
             } else {
-                return next('/statuses'); // Агрегатор на статусы
+                return next('/statuses');
             }
         }
     }
 
-    // Все проверки пройдены
     next();
 });
 

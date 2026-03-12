@@ -17,25 +17,39 @@
           </v-list-item>
         </template>
 
-        <v-list-item v-if="isAdmin" to="/violations-type" class="custom-list-item">
-          <v-list-item-title>Типы нарушений</v-list-item-title>
+        <v-list-item v-if="isAdmin"  to="/delivery-jackets" class="custom-list-item">
+          <v-list-item-title>Куртки курьеров</v-list-item-title>
         </v-list-item>
 
         <v-list-item to="/statuses" class="custom-list-item">
           <v-list-item-title>Статусы</v-list-item-title>
         </v-list-item>
 
-        <v-list-item v-if="isAdmin" to="/courier-shift" class="custom-list-item">
+        <v-list-item v-if="isAdmin"  to="/delivery-bags" class="custom-list-item">
+          <v-list-item-title>Сумки курьеров</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item v-if="isAdmin" to="/violations-type" class="custom-list-item">
+          <v-list-item-title>Типы нарушений</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item v-if="isAdmin" to="/transport-types" class="custom-list-item">
           <v-list-item-title>Типы транспорта</v-list-item-title>
         </v-list-item>
+
+        <v-list-item v-if="isAdmin"  to="/transport" class="custom-list-item">
+          <v-list-item-title>Транспорт</v-list-item-title>
+        </v-list-item>
       </v-list-group>
+
       <v-list-item v-if="isAdmin" to="/aggregators" class="custom-list-item">Агрегаторы</v-list-item>
       <v-list-item v-if="isAdmin" to="/driver-license" class="custom-list-item">Водительские права</v-list-item>
       <v-list-item to="/couriers" class="custom-list-item">Курьеры</v-list-item>
-      <v-list-item v-if="isAdmin" to="/couriers-aggregator" class="custom-list-item">Курьеры-агрегаторов</v-list-item>
       <v-list-item v-if="isAdmin" to="/request-logs" class="custom-list-item">Логи</v-list-item>
       <v-list-item v-if="isAdmin" to="/courier-violations" class="custom-list-item">Нарушения курьера</v-list-item>
       <v-list-item v-if="isAdmin" to="/passport" class="custom-list-item">Паспорт</v-list-item>
+      <v-list-item v-if="isAdmin" to="/couriers-aggregator" class="custom-list-item">Работа</v-list-item>
+      <v-list-item v-if="isAdmin"  to="/orders" class="custom-list-item">Смена</v-list-item>
     </v-list>
 
     <template v-slot:append>

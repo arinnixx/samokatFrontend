@@ -26,9 +26,9 @@ const handleAuthError = (error) => {
 };
 
 export default {
-    async getAllCourierShifts () {
+    async getAllTransport () {
         try{
-            const response = await axiosInstance.get(`${API_URL}/courier-shifts`, getAuthHeader());
+            const response = await axiosInstance.get(`${API_URL}/transport`, getAuthHeader());
             return response.data;
         }catch(error){
             console.error(error);

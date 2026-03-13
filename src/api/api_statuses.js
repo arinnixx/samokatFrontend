@@ -35,5 +35,10 @@ export default {
             handleAuthError(error);
             throw error;
         }
-    }
+    },
+
+    async createStatus(data) {
+        const response = await axiosInstance.post(`${API_URL}/statuses`, data, getAuthHeader());
+        return response.data;
+    },
 }

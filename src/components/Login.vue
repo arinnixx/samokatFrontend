@@ -11,7 +11,7 @@
         <v-tabs
             v-model="tab"
             rounded="lg"
-            color="#0562AA"
+            color="#2563eb"
             grow
             class="mb-6"
         >
@@ -62,7 +62,7 @@
                   type="submit"
                   rounded="lg"
                   size="x-large"
-                  color="#0562AA"
+                  color="#2563eb"
                   variant="elevated"
                   block
                   :loading="aggregatorLoading"
@@ -115,7 +115,7 @@
                   type="submit"
                   rounded="lg"
                   size="x-large"
-                  color="#0562AA"
+                  color="#2563eb"
                   variant="elevated"
                   block
                   :loading="adminLoading"
@@ -301,11 +301,11 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(73, 171, 247, 0.4) 40%, rgba(13, 141, 239, 0.4) 60%);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.8) 40%, rgba(59, 130, 246, 0.8) 60%);
 }
 
 .color-font{
-  color: #094067;
+  color: #2563eb;
   font-weight: bold;
   font-size: 3rem;
   margin-bottom: 0;
@@ -334,7 +334,7 @@ export default {
 }
 
 :deep(.v-field--focused .v-field__outline) {
-  color: #0562AA;
+  color: #2563eb;
   border-width: 2px;
 }
 </style>

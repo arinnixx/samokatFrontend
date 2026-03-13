@@ -86,24 +86,6 @@ const routes = [
         }
     },
     {
-        path: '/driver-license',
-        component: DriverLicense,
-        meta: {
-            requiresAuth: true,
-            showSidebar: true,
-            allowedRoles: [ROLES.ADMIN]
-        }
-    },
-    {
-        path: '/passport',
-        component: Passport,
-        meta: {
-            requiresAuth: true,
-            showSidebar: true,
-            allowedRoles: [ROLES.ADMIN]
-        }
-    },
-    {
         path: '/violations-type',
         component: ViolationsType,
         meta: {

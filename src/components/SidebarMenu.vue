@@ -1,14 +1,17 @@
 <template>
   <v-navigation-drawer permanent class="custom-sidebar">
+    <template v-slot:prepend>
+      <div class="custom-border-bottom" >
+        <v-list-item class="custom">{{ userDisplayName }}</v-list-item>
+      </div>
+    </template>
     <v-list>
-      <v-list-item class="custom">{{ userDisplayName }}</v-list-item>
-      <v-divider/>
       <v-list-group value="Справочники">
         <template v-slot:activator="{ props, isOpen }">
           <v-list-item v-bind="props" class="custom-list-item">
             <template v-slot:append>
               <img
-                  :src="isOpen ? '/src/components/icons/up-arrow.svg' : '/src/components/icons/down-arrow.svg'"
+                  :src="isOpen ? '/src/components/icons/up-arrow 1.svg' : '/src/components/icons/down-arrow 2.svg'"
                   width="24"
                   height="24"
               >
@@ -43,23 +46,31 @@
       </v-list-group>
 
       <v-list-item v-if="isAdmin" to="/aggregators" class="custom-list-item">Агрегаторы</v-list-item>
-      <v-list-item v-if="isAdmin" to="/driver-license" class="custom-list-item">Водительские права</v-list-item>
       <v-list-item to="/couriers" class="custom-list-item">Курьеры</v-list-item>
       <v-list-item v-if="isAdmin" to="/request-logs" class="custom-list-item">Логи</v-list-item>
       <v-list-item v-if="isAdmin" to="/courier-violations" class="custom-list-item">Нарушения курьера</v-list-item>
-      <v-list-item v-if="isAdmin" to="/passport" class="custom-list-item">Паспорт</v-list-item>
       <v-list-item v-if="isAdmin" to="/couriers-aggregator" class="custom-list-item">Работа</v-list-item>
       <v-list-item v-if="isAdmin"  to="/orders" class="custom-list-item">Смена</v-list-item>
     </v-list>
 
+
     <template v-slot:append>
-      <div class="pa-2">
+      <div class="custom-border-top">
         <v-btn
             @click="handleLogout"
-            color="#0562AA"
+            color="#60A5FA"
             block
+            flat
             :loading="logoutLoading"
+            class="custom-button"
         >
+          <template v-slot:prepend>
+            <img
+                :src="'/src/components/icons/exit.svg'"
+                width="16"
+                height="16"
+            >
+          </template>
           Выход
         </v-btn>
       </div>
@@ -148,33 +159,46 @@ const handleLogout = async () => {
   transition: all 0.3s ease;
 }
 
-.custom-list-group {
-  border-radius: 10px;
-  margin: 4px 8px;
-  transition: all 0.3s ease;
-  padding-left: 0;
-}
-
 .custom {
   text-align: center;
-  color: #094067;
+  color: #fff;
   font-weight: 600;
   width: 100%;
 
 }
 
+.custom-border-bottom {
+  border-bottom: 1px solid #3B82F6;
+  padding: 8px;
+}
+.custom-border-top {
+  border-top: 1px solid #3B82F6;
+  padding: 12px;
+
+}
+
+.custom-button{
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.custom-button:hover {
+  background-color: #3B82F6 !important;
+}
+
 .custom-sidebar {
   max-width: 220px;
-  background-color: #d8eefe70;
-
+  background-color: #60A5FA;
+  color: #fff;
 }
 
 .custom-list-item:hover {
-  background-color: #add7f5;
+  background-color: #3B82F6;
 
 }
 :deep(.v-list-item--active) {
-  background-color: #77c9fc70;
+  background-color: #2563eb;
+  color: #fff
 
 }
 

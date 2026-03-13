@@ -1,7 +1,69 @@
 <template>
   <div class="table-wrapper">
-    <h2 class="text-center">{{ title }}</h2>
-    <v-card class="mx-auto mb-8 wide-card" flat rounded="lg">
+    <div class="header-section">
+      <div class="header-top">
+        <div>
+          <h1 class="page-title">
+            {{ headerTitle || title }}
+          </h1>
+        </div>
+        <slot name="header-actions">
+          <v-btn
+              v-if="showAddButton"
+              class="button-add"
+              @click="$emit('add')"
+          >
+            <template v-slot:prepend>
+              <img
+                  :src="'/src/components/icons/add.svg'"
+                  width="24"
+                  height="24"
+              >
+            </template>
+            {{ addButtonText }}
+          </v-btn>
+        </slot>
+      </div>
+
+      <div class="filters-row">
+        <div class="search-wrapper">
+          <v-text-field
+              v-model="searchModel"
+              placeholder="Поиск"
+              density="compact"
+              hide-details
+              variant="outlined"
+              @update:model-value="onSearchInput"
+          >
+            <template v-slot:prepend-inner>
+              <img
+                  :src="'/src/components/icons/search.svg'"
+                  width="14"
+                  height="14"
+              >
+            </template>
+          </v-text-field>
+        </div>
+        <div class="filter-buttons">
+          <v-btn
+              variant="outlined"
+              class="filter-button"
+              @click="$emit('filters')"
+          >
+
+            <template v-slot:prepend>
+              <img
+                  :src="'/src/components/icons/filter.svg'"
+                  width="16"
+                  height="16"
+              >
+            </template>
+            Фильтры
+          </v-btn>
+        </div>
+      </div>
+    </div>
+    <v-card class="mx-auto mb-8 wide-card" flat >
       <v-data-table
           :headers="headers"
           :items="normalizedItems"
@@ -34,7 +96,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import {computed, ref, watch} from 'vue';
 
 const props = defineProps({
   title: {
@@ -56,8 +118,19 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
-  }
+  },
+  headerTitle: {
+    type: String,
+    default: ''
+  },
+  showAddButton: { type: Boolean, default: false },
+  addButtonText: { type: String, default: 'Создать' },
+  searchPlaceholder: { type: String, default: 'Поиск...' },
+  searchValue: { type: String, default: '' },
+
 });
+
+
 
 const normalizedItems = computed(() => {
   if (!props.items) return [];
@@ -77,6 +150,7 @@ const normalizedItems = computed(() => {
   console.warn('Не удалось нормализовать items:', props.items);
   return [];
 });
+
 </script>
 
 <style scoped>
@@ -84,34 +158,81 @@ const normalizedItems = computed(() => {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 0 20px;
+  padding-right: 32px;
 }
+
+.header-section {
+  width: 100%;
+  max-width: none;
+  background-color: white;
+  padding: 24px 32px;
+  border-radius: 0;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.filters-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-wrapper {
+  flex: 1 1 300px;
+  max-width: 400px;
+}
+
+.filter-buttons {
+  display: flex;
+}
+
+.filter-buttons .v-btn {
+  height: 40px;
+
+}
+
+.filter-button{
+  border-color: lightgray;
+  font-weight: 600;
+}
+
 
 .custom-border {
-  border: 1px solid #0562AA;
-}
-
-h2 {
-  text-align: center;
-  color: #094067;
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin-bottom: 2rem;
-  width: 100%;
+  border: 1px solid #60A5FA;
 }
 
 .wide-card {
-  width: 95%;
-  max-width: 1600px;
+  width: 100%;
+  max-width: none;
+  margin: 0 32px 0 0;
 }
 
 :deep(.v-data-table__th) {
-  background-color: #0562AA;
+  background-color: #60A5FA;
   color: white;
 }
 
+.page-title {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  color: black;
+}
 
-
-
+.button-add {
+  background-color: #3B82F6;
+  color: white;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+}
+.button-add:hover {
+  background-color: #3B82F6 ;
+}
 </style>

@@ -43,7 +43,6 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'id', title: 'Id'},
         {key: 'violation_date', title: 'Дата нарушения'},
         {key: 'incident_details', title: 'Описание нарушения'},
         {key: 'operator_comment', title: 'Комментарий оператора'},

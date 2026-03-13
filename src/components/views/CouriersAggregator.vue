@@ -47,7 +47,6 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'id', title: 'Id'},
         {key: 'start_date', title: 'Дата начала работы'},
         {key: 'end_date', title: 'Дата окончания работы'},
         {key: 'couriers_id', title: 'Курьер'},

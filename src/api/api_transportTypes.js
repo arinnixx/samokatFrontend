@@ -35,5 +35,10 @@ export default {
             handleAuthError(error);
             throw error;
         }
-    }
+    },
+
+    async createTransportType(data) {
+        const response = await axiosInstance.post(`${API_URL}/transport-types`, data, getAuthHeader());
+        return response.data;
+    },
 }

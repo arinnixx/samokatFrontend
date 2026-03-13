@@ -33,7 +33,6 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'id', title: 'Id'},
         {key: 'code', title: 'Код сумки'},
         {key: 'aggregator_id', title: 'Аггрегатор'},
       ]

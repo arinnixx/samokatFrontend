@@ -35,5 +35,10 @@ export default {
             handleAuthError(error);
             throw error;
         }
-    }
+    },
+
+    async createViolationsType(data) {
+        const response = await axiosInstance.post(`${API_URL}/violations-type`, data, getAuthHeader());
+        return response.data;
+    },
 }

@@ -38,8 +38,7 @@ export default {
       loading: false,
       columns: [
         {key: 'id', title: 'Id', width: '80px'},
-        {key: 'aggregator_id', title: 'Id аггрегатора', width: '120px'},
-        {key: 'request_data', title: 'Данные запроса', width: '300px'},
+        {key: 'request_data', title: 'Данные запроса', width: '420px'},
         {key: 'created_at', title: 'Дата создания', width: '150px'},
       ]
     }

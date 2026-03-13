@@ -11,9 +11,7 @@
       </template>
 
       <template v-slot:item.courier_id="{ item }">
-        <span class="clickable-text" @click="openModal('courier',item.courier_id)">
           {{ getCourierName(item.courier_id) }}
-        </span>
       </template>
 
       <template v-slot:item.aggregator_id="{ item }">
@@ -88,7 +86,6 @@ export default {
 
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'id', title: 'Id'},
         {key: 'aggregator_id', title: 'Аггрегатор'},
         {key: 'courier_id', title: 'Курьер'},
         {key: 'transport_id', title: 'Транспорт'},
@@ -276,22 +273,10 @@ export default {
       let fields = [];
 
       switch(type) {
-        case 'courier':
-          item = this.couriersMap[`full_${id}`] || { id, name: this.getCourierName(id) };
-          title = 'Информация о курьере';
-          fields = [
-            { key: 'id', label: 'ID' },
-            { key: 'lastName', label: 'Имя' },
-            { key: 'citizenship', label: 'Гражданство' },
-            { key: 'birthDate', label: 'Дата рождения', getValue: (item)=>this.formatDate(item.birthDate) },
-
-          ];
-          break;
           case 'transport':
           item = this.transportsMap[`full_${id}`] || { id, code: this.getTransportCode(id) };
           title = 'Информация о транспорте';
           fields = [
-            { key: 'id', label: 'ID' },
             { key: 'code', label: 'Код' },
             { key: 'aggregator_id', label: 'Аггрегатор', getValue: (item) => this.getAggregatorName(item.aggregator_id) },
           ];
@@ -300,7 +285,6 @@ export default {
           item = this.bagsMap[`full_${id}`] || { id, code: this.getDeliveryBagsCode(id) };
           title = 'Информация о сумке';
           fields = [
-            { key: 'id', label: 'ID' },
             { key: 'code', label: 'Код' },
             { key: 'aggregator_id', label: 'Аггрегатор', getValue: (item) => this.getAggregatorName(item.aggregator_id) },
 
@@ -310,7 +294,6 @@ export default {
           item = this.jacketsMap[`full_${id}`] || { id, code: this.getDeliveryJacketsCode(id) };
           title = 'Информация о куртке';
           fields = [
-            { key: 'id', label: 'ID' },
             { key: 'code', label: 'Код' },
             { key: 'aggregator_id', label: 'Аггрегатор', getValue: (item) => this.getAggregatorName(item.aggregator_id) },
 

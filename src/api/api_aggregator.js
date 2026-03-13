@@ -35,5 +35,10 @@ export default {
             handleAuthError(error);
             throw error;
         }
-    }
+    },
+
+    async createAggregator(data) {
+        const response = await axiosInstance.post(`${API_URL}/aggregator`, data, getAuthHeader());
+        return response.data;
+    },
 }

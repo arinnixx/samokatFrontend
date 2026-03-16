@@ -46,6 +46,40 @@ export default {
             handleAuthError(error);
             throw error;
         }
-    }
+    },
+
+    async updateCourier(id, data) {
+        try {
+            const response = await axiosInstance.patch(`${API_URL}/couriers/${id}`, data, getAuthHeader());
+            return response.data;
+        } catch (error) {
+            console.error(error);
+            handleAuthError(error);
+            throw error;
+        }
+    },
+
+    async deleteCourier(id) {
+        try {
+            const response = await axiosInstance.delete(`${API_URL}/couriers/${id}`, getAuthHeader());
+            return response.data;
+        } catch (error) {
+            console.error(error);
+            handleAuthError(error);
+            throw error;
+        }
+    },
+
+    async getCourierHistory (id) {
+        try{
+            const response = await axiosInstance.get(`${API_URL}/couriers/${id}/history`, getAuthHeader());
+            return response.data;
+        }catch(error){
+            console.error(error);
+            handleAuthError(error);
+            throw error;
+        }
+    },
+
 
 }

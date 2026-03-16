@@ -12,6 +12,7 @@
               v-if="showAddButton"
               class="button-add"
               @click="$emit('add')"
+              rounded="lg"
           >
             <template v-slot:prepend>
               <img
@@ -33,6 +34,7 @@
               density="compact"
               hide-details
               variant="outlined"
+              rounded="lg"
               @update:model-value="onSearchInput"
           >
             <template v-slot:prepend-inner>
@@ -48,6 +50,7 @@
           <v-btn
               variant="outlined"
               class="filter-button"
+              rounded="lg"
               @click="$emit('filters')"
           >
 
@@ -90,6 +93,36 @@
             <p class="mt-2">Загрузка...</p>
           </div>
         </template>
+
+        <template #item.actions="{ item }">
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn icon v-bind="props" variant="text">
+                <img src="/src/components/icons/menu-dots.svg" width="18" height="18" alt="actions">
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item @click="$emit('edit', item)">
+                <template v-slot:prepend>
+                  <img src="/src/components/icons/edit.svg" width="14" height="14">
+                </template>
+                <v-list-item-title class="menu-text">Редактировать</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="$emit('delete', item)">
+                <template v-slot:prepend>
+                  <img src="/src/components/icons/delete.svg" width="14" height="14">
+                </template>
+                <v-list-item-title class="menu-text">Удалить</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="$emit('history', item)">
+                <template v-slot:prepend>
+                  <img src="/src/components/icons/history.svg" width="14" height="14">
+                </template>
+                <v-list-item-title class="menu-text">История</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </template>
       </v-data-table>
     </v-card>
   </div>
@@ -130,7 +163,7 @@ const props = defineProps({
 
 });
 
-
+const emit = defineEmits(['edit', 'delete', 'history']);
 
 const normalizedItems = computed(() => {
   if (!props.items) return [];
@@ -183,6 +216,11 @@ const normalizedItems = computed(() => {
   flex-wrap: wrap;
 }
 
+.menu-text{
+  font-size: 14px;
+  padding-left: 6px;
+}
+
 .search-wrapper {
   flex: 1 1 300px;
   max-width: 400px;
@@ -205,6 +243,8 @@ const normalizedItems = computed(() => {
 
 .custom-border {
   border: 1px solid #60A5FA;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .wide-card {
@@ -217,6 +257,15 @@ const normalizedItems = computed(() => {
   background-color: #60A5FA;
   color: white;
 }
+
+:deep(.v-data-table.custom-border thead tr:first-child th:first-child) {
+  border-top-left-radius: 10px;
+
+}
+:deep(.v-data-table.custom-border thead tr:first-child th:last-child) {
+  border-top-right-radius: 10px;
+}
+
 
 .page-title {
   font-size: 24px;

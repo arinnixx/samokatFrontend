@@ -5,6 +5,9 @@
         :headers="columns"
         :items="ordersList"
         :loading="loading"
+        @edit="editOrder"
+        @delete="openConfirmDelete"
+        @history="showHistory"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -47,6 +50,45 @@
         :item="modal.item"
         :fields="modal.fields"
     />
+
+    <Modal
+        v-model="editModal.show"
+        mode="edit"
+        :title="editModal.title"
+        :item="editModal.item"
+        :fields="editModal.fields"
+        :api-method="editModal.apiMethod"
+        @created="fetchOrders"
+    />
+
+    <template>
+      <HistoryModal
+          v-model="showOrderHistoryModal"
+          :entity-id="historyOrder?.id"
+          :entity-title="`Смена #${historyOrder?.id}`"
+          :fetch-history="api.getOrderHistory"
+      />
+    </template>
+
+    <v-dialog v-model="confirmDialog.show" max-width="400">
+      <v-card>
+        <v-card-title class="text-h6">{{ confirmDialog.title }}</v-card-title>
+        <v-card-text>{{ confirmDialog.message }}</v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="secondary" variant="text" @click="confirmDialog.show = false">
+            Отмена
+          </v-btn>
+          <v-btn
+              color="error"
+              @click="confirmDelete"
+              :loading="confirmDialog.loading"
+          >
+            Удалить
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-main>
 </template>
 
@@ -60,14 +102,17 @@ import apiTransport from "@/api/api_transport.js";
 import apiDeliveryBags from "@/api/api_deliveryBags.js";
 import apiDeliveryJackets from "@/api/api_deliveryJackets.js";
 import apiStatus from "@/api/api_statuses.js";
+import HistoryModal from "@/components/HistoryModal.vue";
 
 export default {
   components: {
+    HistoryModal,
     DataTable,
     Modal
   },
   data(){
     return{
+      api:api,
       ordersList: [],
       couriersMap: {},
       aggregatorsMap: {},
@@ -76,12 +121,30 @@ export default {
       jacketsMap: {},
       statusMap: {},
       loading: false,
+      showOrderHistoryModal: false,
+      historyOrder: null,
 
       modal: {
         show: false,
         title: '',
         item: null,
         fields: []
+      },
+
+      editModal: {
+        show: false,
+        title: 'Редактирование смены',
+        item: null,
+        fields: [],
+        apiMethod: null
+      },
+
+      confirmDialog: {
+        show: false,
+        title: 'Подтверждение удаления',
+        message: '',
+        item: null,
+        loading: false
       },
 
       columns: [
@@ -94,6 +157,7 @@ export default {
         {key: 'status_id', title: 'Статус'},
         {key: 'start_date', title: 'Дата начала смены'},
         {key: 'end_date', title: 'Дата окончания смены'},
+        { key: 'actions', title: 'Действия' }
       ]
     }
   },
@@ -120,11 +184,22 @@ export default {
       }
     },
 
-    async fetchOrders(){
-      try{
-        this.ordersList = await api.getAllOrders();
-      }catch(error){
-        console.error(error)
+    async fetchOrders() {
+      try {
+        const data = await api.getAllOrders();
+        let ordersArray = [];
+        if (data && data.items) {
+          ordersArray = data.items;
+        } else if (Array.isArray(data)) {
+          ordersArray = data;
+        } else {
+          ordersArray = [];
+        }
+        ordersArray = ordersArray.filter(o => !o.deleted_at);
+        this.ordersList = ordersArray;
+      } catch (error) {
+        console.error('Ошибка загрузки смен:', error);
+        this.ordersList = [];
       }
     },
 
@@ -307,6 +382,50 @@ export default {
         item,
         fields
       };
+    },
+
+
+    editOrder(item) {
+      const fields = [
+        {key: 'created_at', label: 'Дата создания', cols:12},
+        {key: 'aggregator_id', label: 'Аггрегатор', cols:12},
+        {key: 'courier_id', label: 'Курьер', cols:12},
+        {key: 'transport_id', label: 'Транспорт', cols:12},
+        {key: 'bag_id', label: 'Сумка курьера', cols:12},
+        {key: 'jacket_id', label: 'Куртка курьера', cols:12},
+        {key: 'status_id', label: 'Статус', cols:12},
+        {key: 'start_date', label: 'Дата начала смены', cols:12},
+        {key: 'end_date', label: 'Дата окончания смены', cols:12},
+      ];
+      this.editModal.item = {...item};
+      this.editModal.fields = fields;
+      this.editModal.apiMethod = (data) => api.updateOrder(item.id, data);
+      this.editModal.show = true;
+    },
+
+    showHistory(item) {
+      this.historyOrder = item;
+      this.showOrderHistoryModal = true;
+    },
+
+    openConfirmDelete(item) {
+      this.confirmDialog.message = `Вы действительно хотите удалить смену?`;
+      this.confirmDialog.item = item;
+      this.confirmDialog.show = true;
+    },
+
+    async confirmDelete() {
+      if (!this.confirmDialog.item) return;
+      this.confirmDialog.loading = true;
+      try {
+        await api.deleteOrder(this.confirmDialog.item.id);
+        await this.fetchOrders();
+        this.confirmDialog.show = false;
+      } catch (error) {
+        console.error('Ошибка удаления:', error);
+      } finally {
+        this.confirmDialog.loading = false;
+      }
     },
 
     getCourierName(id) {

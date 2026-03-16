@@ -35,5 +35,38 @@ export default {
             handleAuthError(error);
             throw error;
         }
-    }
+    },
+
+    async updateOrder(id, data) {
+        try {
+            const response = await axiosInstance.patch(`${API_URL}/orders/${id}`, data, getAuthHeader());
+            return response.data;
+        } catch (error) {
+            console.error(error);
+            handleAuthError(error);
+            throw error;
+        }
+    },
+
+    async deleteOrder(id) {
+        try {
+            const response = await axiosInstance.delete(`${API_URL}/orders/${id}`, getAuthHeader());
+            return response.data;
+        } catch (error) {
+            console.error(error);
+            handleAuthError(error);
+            throw error;
+        }
+    },
+
+    async getOrderHistory (id) {
+        try{
+            const response = await axiosInstance.get(`${API_URL}/orders/${id}/history`, getAuthHeader());
+            return response.data;
+        }catch(error){
+            console.error(error);
+            handleAuthError(error);
+            throw error;
+        }
+    },
 }

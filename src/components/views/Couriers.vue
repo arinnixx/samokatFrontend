@@ -5,6 +5,9 @@
         :headers="columns"
         :items="couriersList"
         :loading="loading"
+        @edit="editCourier"
+        @delete="openConfirmDelete"
+        @history="showHistory"
 
     >
       <template v-slot:item.created_at="{ item }">
@@ -38,6 +41,43 @@
         :item="modal.item"
         :fields="modal.fields"
     />
+
+    <Modal
+        v-model="editModal.show"
+        mode="edit"
+        :title="editModal.title"
+        :item="editModal.item"
+        :fields="editModal.fields"
+        :api-method="editModal.apiMethod"
+        @created="fetchCouriers"
+    />
+
+      <HistoryModal
+          v-model="showHistoryModal"
+          :entity-id="historyCourier?.id"
+          :entity-title="historyCourier ? getFullName(historyCourier) : ''"
+          :fetch-history="api.getCourierHistory"
+      />
+
+    <v-dialog v-model="confirmDialog.show" max-width="400">
+      <v-card>
+        <v-card-title class="text-h6">{{ confirmDialog.title }}</v-card-title>
+        <v-card-text>{{ confirmDialog.message }}</v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="secondary" variant="text" @click="confirmDialog.show = false">
+            Отмена
+          </v-btn>
+          <v-btn
+              color="error"
+              @click="confirmDelete"
+              :loading="confirmDialog.loading"
+          >
+            Удалить
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-main>
 </template>
 
@@ -47,25 +87,46 @@ import api from "@/api/api_couriers.js";
 import apiPassport from "@/api/api_passport.js";
 import apiDriverLicense from "@/api/api_driverLicense.js";
 import Modal from "@/components/Modal.vue";
+import HistoryModal from "@/components/HistoryModal.vue";
 
 export default {
   components: {
+    HistoryModal,
     Modal,
     DataTable
   },
   data(){
     return{
+      api: api,
       couriersList: [],
       couriersFullMap: {},
       passportNumberMap: {},
       driverLicenseNumberMap: {},
       loading: false,
+      showHistoryModal: false,
+      historyCourier: null,
 
       modal: {
         show: false,
         title: '',
         item: null,
         fields: []
+      },
+
+      editModal: {
+        show: false,
+        title: 'Редактирование курьера',
+        item: null,
+        fields: [],
+        apiMethod: null
+      },
+
+      confirmDialog: {
+        show: false,
+        title: 'Подтверждение удаления',
+        message: '',
+        item: null,
+        loading: false
       },
 
       columns: [
@@ -78,6 +139,7 @@ export default {
         {key: 'inn', title: 'ИНН'},
         {key: 'passport_id', title: 'Паспорт'},
         {key: 'driverLicense_id', title: 'Водительские права'},
+        { key: 'actions', title: 'Действия' }
       ]
     }
   },
@@ -94,7 +156,7 @@ export default {
   async created(){
     await this.loadData()
   },
-  methods:{
+  methods: {
     async loadData() {
       this.loading = true;
       try {
@@ -110,8 +172,8 @@ export default {
       }
     },
 
-    async fetchCouriers(){
-      try{
+    async fetchCouriers() {
+      try {
         let response;
         if (this.isAggregator && this.aggregatorId) {
           console.log('Загрузка курьеров для агрегатора ID:', this.aggregatorId);
@@ -130,6 +192,8 @@ export default {
           couriersArray = [];
         }
 
+        couriersArray = couriersArray.filter(c => !c.deleted_at);
+
         this.couriersList = couriersArray;
         this.couriersFullMap = {};
 
@@ -140,14 +204,14 @@ export default {
         });
 
         console.log('Загружено курьеров:', couriersArray.length);
-      } catch(error) {
+      } catch (error) {
         console.error('Ошибка загрузки курьеров:', error);
         this.couriersList = [];
       }
     },
 
-    async fetchPassportNumber(){
-      try{
+    async fetchPassportNumber() {
+      try {
         const response = await apiPassport.getAllPassport();
         console.log('Ответ API паспорта:', response);
 
@@ -168,13 +232,13 @@ export default {
         });
 
         console.log('Загружено паспортов:', Object.keys(this.passportNumberMap).length);
-      }catch(error){
+      } catch (error) {
         console.error('Ошибка загрузки паспортов:', error);
       }
     },
 
-    async fetchDriverLicenseNumber(){
-      try{
+    async fetchDriverLicenseNumber() {
+      try {
         const response = await apiDriverLicense.getAllDriverLicense();
         console.log('Ответ API прав:', response);
 
@@ -195,12 +259,12 @@ export default {
         });
 
         console.log('Загружено прав:', Object.keys(this.driverLicenseNumberMap).length);
-      }catch(error){
+      } catch (error) {
         console.error('Ошибка загрузки прав:', error);
       }
     },
 
-    getFullName(item){
+    getFullName(item) {
       const lastName = item.lastName || '';
       const firstName = item.firstName || '';
       const middleName = item.middleName || '';
@@ -222,18 +286,18 @@ export default {
       let title = '';
       let fields = [];
 
-      switch(type) {
+      switch (type) {
         case 'passport':
-          item = this.passportNumberMap[`full_${id}`] || { id, number: this.getPassportNumber(id) };
+          item = this.passportNumberMap[`full_${id}`] || {id, number: this.getPassportNumber(id)};
           title = 'Информация о паспорте';
           fields = [
-            { key: 'series', label: 'Серия' },
-            { key: 'number', label: 'Номер' },
-            { key: 'issueDate', label: 'Дата выдачи' },
-            { key: 'issuedBy', label: 'Кем выдан' },
-            { key: 'birthPlace', label: 'Место рождения' },
-            { key: 'registrationAddress', label: 'Адрес постоянной регистрации' },
-            { key: 'residenceAddress', label: 'Адрес проживания' },
+            {key: 'series', label: 'Серия'},
+            {key: 'number', label: 'Номер'},
+            {key: 'issueDate', label: 'Дата выдачи'},
+            {key: 'issuedBy', label: 'Кем выдан'},
+            {key: 'birthPlace', label: 'Место рождения'},
+            {key: 'registrationAddress', label: 'Адрес постоянной регистрации'},
+            {key: 'residenceAddress', label: 'Адрес проживания'},
             {
               key: 'couriers_id',
               label: 'ФИО',
@@ -256,15 +320,15 @@ export default {
           break;
 
         case 'driverLicense':
-          item = this.driverLicenseNumberMap[`full_${id}`] || { id, number: this.getDriverLicenseNumber(id) };
+          item = this.driverLicenseNumberMap[`full_${id}`] || {id, number: this.getDriverLicenseNumber(id)};
           title = 'Информация о водительских правах';
           fields = [
-            { key: 'country', label: 'Страна', },
-            { key: 'series', label: 'Серия' },
-            { key: 'number', label: 'Номер' },
-            { key: 'issueDate', label: 'Дата выдачи' },
-            { key: 'expiryDate', label: 'Дата окончания действия' },
-            { key: 'experience_startYear', label: 'Год начала ВУ' },
+            {key: 'country', label: 'Страна',},
+            {key: 'series', label: 'Серия'},
+            {key: 'number', label: 'Номер'},
+            {key: 'issueDate', label: 'Дата выдачи'},
+            {key: 'expiryDate', label: 'Дата окончания действия'},
+            {key: 'experience_startYear', label: 'Год начала ВУ'},
             {
               key: 'couriers_id',
               label: 'ФИО',
@@ -284,6 +348,51 @@ export default {
         fields
       };
     },
+
+    editCourier(item) {
+      const fields = [
+        {key: 'lastName', label: 'Фамилия', required: true, cols: 12},
+        {key: 'firstName', label: 'Имя', required: true, cols: 12},
+        {key: 'middleName', label: 'Отчество', cols: 12},
+        {key: 'gender', label: 'Пол', cols: 12},
+        {key: 'citizenship', label: 'Гражданство', cols: 12},
+        {key: 'phone', label: 'Телефон', required: true, cols: 12},
+        {key: 'email', label: 'Email', cols: 12},
+        {key: 'inn', label: 'ИНН', cols: 12},
+        {key: 'snils', label: 'СНИЛС', cols: 12}
+      ];
+      this.editModal.item = {...item};
+      this.editModal.fields = fields;
+      this.editModal.apiMethod = (data) => api.updateCourier(item.id, data);
+      this.editModal.show = true;
+    },
+
+
+    showHistory(item) {
+      this.historyCourier = item;
+      this.showHistoryModal = true;
+    },
+
+    openConfirmDelete(item) {
+      this.confirmDialog.message = `Вы действительно хотите удалить курьера ${this.getFullName(item)}?`;
+      this.confirmDialog.item = item;
+      this.confirmDialog.show = true;
+    },
+
+    async confirmDelete() {
+      if (!this.confirmDialog.item) return;
+      this.confirmDialog.loading = true;
+      try {
+        await api.deleteCourier(this.confirmDialog.item.id);
+        await this.fetchCouriers();
+        this.confirmDialog.show = false;
+      } catch (error) {
+        console.error('Ошибка удаления:', error);
+      } finally {
+        this.confirmDialog.loading = false;
+      }
+    },
+
 
     formatDate(timestamp) {
       if (!timestamp) return '—';

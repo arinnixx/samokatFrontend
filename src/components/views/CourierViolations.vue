@@ -21,7 +21,24 @@
       <template v-slot:item.violation_type_id="{ item }">
         {{ getViolationsTypeCategory(item.violation_type_id) }}
       </template>
+
+      <template v-slot:item.location="{ item }">
+        <v-btn
+            v-if="item.location?.coordinates"
+            variant="text"
+            color="primary"
+            @click="openMapModal(item.location)"
+        >
+          Посмотреть на карте
+        </v-btn>
+        <span v-else>—</span>
+      </template>
     </DataTable>
+
+    <ViolationMapModal
+        v-model="mapModal.show"
+        :coordinates="mapModal.coordinates"
+    />
   </v-main>
 </template>
 
@@ -30,9 +47,11 @@ import DataTable from '@/components/DataTable.vue'
 import api from "@/api/api_courierViolations.js";
 import apiCouriers from "@/api/api_couriers.js";
 import apiViolationsType from "@/api/api_violationsType.js";
+import ViolationMapModal from "@/components/ViolationMapModal.vue";
 
 export default {
   components: {
+    ViolationMapModal,
     DataTable
   },
   data(){
@@ -41,6 +60,10 @@ export default {
       couriersMap: {},
       violationsTypeMap: {},
       loading: false,
+      mapModal: {
+        show: false,
+        coordinates: null
+      },
       columns: [
         {key: 'created_at', title: 'Дата создания'},
         {key: 'violation_date', title: 'Дата нарушения'},
@@ -48,6 +71,7 @@ export default {
         {key: 'operator_comment', title: 'Комментарий оператора'},
         {key: 'courier_id', title: 'Курьер'},
         {key: 'violation_type_id', title: 'Тип нарушения'},
+        {key: 'location', title: 'Местоположение'},
       ]
     }
   },
@@ -140,6 +164,11 @@ export default {
     getViolationsTypeCategory(id) {
       if (!id) return '—';
       return this.violationsTypeMap[id] || `ID: ${id}`;
+    },
+
+    openMapModal(location) {
+      this.mapModal.coordinates = location;
+      this.mapModal.show = true;
     },
 
     formatDate(timestamp) {

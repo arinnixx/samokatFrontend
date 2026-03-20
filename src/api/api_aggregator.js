@@ -41,4 +41,34 @@ export default {
         const response = await axiosInstance.post(`${API_URL}/aggregator`, data, getAuthHeader());
         return response.data;
     },
+
+    async resetAggregatorPassword(aggregatorId, newPassword) {
+        try {
+            const response = await axiosInstance.patch(
+                `${API_URL}/admin/aggregators/${aggregatorId}/reset-password`,
+                { newPassword },
+                getAuthHeader()
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка сброса пароля:', error);
+            throw error;
+        }
+    },
+
+    async toggleAggregatorBlock(aggregatorId, isBlocked) {
+        try {
+            const response = await axiosInstance.patch(
+                `${API_URL}/admin/aggregators/${aggregatorId}/block`,
+                { isBlocked },
+                getAuthHeader()
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при изменении статуса блокировки:', error);
+            throw error;
+        }
+    }
+
+
 }

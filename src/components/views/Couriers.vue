@@ -3,12 +3,11 @@
     <DataTable
         title="Курьеры"
         :headers="columns"
-        :items="couriersList"
+        :items="filteredItems"
         :loading="loading"
-        @edit="editCourier"
-        @delete="openConfirmDelete"
         @history="showHistory"
-
+        @update:search-value="onSearchChange"
+        :show-history-button="true"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -41,17 +40,6 @@
         :item="modal.item"
         :fields="modal.fields"
     />
-
-    <Modal
-        v-model="editModal.show"
-        mode="edit"
-        :title="editModal.title"
-        :item="editModal.item"
-        :fields="editModal.fields"
-        :api-method="editModal.apiMethod"
-        @created="fetchCouriers"
-    />
-
       <HistoryModal
           v-model="showHistoryModal"
           :entity-id="historyCourier?.id"
@@ -59,25 +47,6 @@
           :fetch-history="api.getCourierHistory"
       />
 
-    <v-dialog v-model="confirmDialog.show" max-width="400">
-      <v-card>
-        <v-card-title class="text-h6">{{ confirmDialog.title }}</v-card-title>
-        <v-card-text>{{ confirmDialog.message }}</v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="secondary" variant="text" @click="confirmDialog.show = false">
-            Отмена
-          </v-btn>
-          <v-btn
-              color="error"
-              @click="confirmDelete"
-              :loading="confirmDialog.loading"
-          >
-            Удалить
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-main>
 </template>
 
@@ -88,6 +57,7 @@ import apiPassport from "@/api/api_passport.js";
 import apiDriverLicense from "@/api/api_driverLicense.js";
 import Modal from "@/components/Modal.vue";
 import HistoryModal from "@/components/HistoryModal.vue";
+import {filterItems} from "vuetify/lib/composables/filter.js";
 
 export default {
   components: {
@@ -113,23 +83,8 @@ export default {
         fields: []
       },
 
-      editModal: {
-        show: false,
-        title: 'Редактирование курьера',
-        item: null,
-        fields: [],
-        apiMethod: null
-      },
-
-      confirmDialog: {
-        show: false,
-        title: 'Подтверждение удаления',
-        message: '',
-        item: null,
-        loading: false
-      },
-
       columns: [
+        { key: 'actions', title: 'Действия' },
         {key: 'created_at', title: 'Дата создания'},
         {key: 'fullName', title: 'ФИО'},
         {key: 'gender', title: 'Пол'},
@@ -139,8 +94,9 @@ export default {
         {key: 'inn', title: 'ИНН'},
         {key: 'passport_id', title: 'Паспорт'},
         {key: 'driverLicense_id', title: 'Водительские права'},
-        { key: 'actions', title: 'Действия' }
-      ]
+      ],
+
+      searchQuery: '',
     }
   },
   computed: {
@@ -151,12 +107,36 @@ export default {
     aggregatorId() {
       const aggregator = JSON.parse(localStorage.getItem('aggregator') || '{}');
       return aggregator.id || null;
+    },
+
+    filteredItems() {
+      if (!this.searchQuery) return this.couriersList;
+
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.couriersList.filter(item => {
+        return (
+            (item.lastName?.toLowerCase().includes(q)) ||
+            (item.firstName?.toLowerCase().includes(q)) ||
+            (item.middleName?.toLowerCase().includes(q)) ||
+            (item.phone?.includes(q)) ||
+            (item.email?.toLowerCase().includes(q)) ||
+            (item.snils?.includes(q)) ||
+            (item.inn?.includes(q))
+        );
+      });
     }
   },
   async created(){
     await this.loadData()
   },
   methods: {
+
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
+    },
+    filterItems() {
+      return filterItems
+    },
     async loadData() {
       this.loading = true;
       try {
@@ -349,50 +329,11 @@ export default {
       };
     },
 
-    editCourier(item) {
-      const fields = [
-        {key: 'lastName', label: 'Фамилия', required: true, cols: 12},
-        {key: 'firstName', label: 'Имя', required: true, cols: 12},
-        {key: 'middleName', label: 'Отчество', cols: 12},
-        {key: 'gender', label: 'Пол', cols: 12},
-        {key: 'citizenship', label: 'Гражданство', cols: 12},
-        {key: 'phone', label: 'Телефон', required: true, cols: 12},
-        {key: 'email', label: 'Email', cols: 12},
-        {key: 'inn', label: 'ИНН', cols: 12},
-        {key: 'snils', label: 'СНИЛС', cols: 12}
-      ];
-      this.editModal.item = {...item};
-      this.editModal.fields = fields;
-      this.editModal.apiMethod = (data) => api.updateCourier(item.id, data);
-      this.editModal.show = true;
-    },
-
 
     showHistory(item) {
       this.historyCourier = item;
       this.showHistoryModal = true;
     },
-
-    openConfirmDelete(item) {
-      this.confirmDialog.message = `Вы действительно хотите удалить курьера ${this.getFullName(item)}?`;
-      this.confirmDialog.item = item;
-      this.confirmDialog.show = true;
-    },
-
-    async confirmDelete() {
-      if (!this.confirmDialog.item) return;
-      this.confirmDialog.loading = true;
-      try {
-        await api.deleteCourier(this.confirmDialog.item.id);
-        await this.fetchCouriers();
-        this.confirmDialog.show = false;
-      } catch (error) {
-        console.error('Ошибка удаления:', error);
-      } finally {
-        this.confirmDialog.loading = false;
-      }
-    },
-
 
     formatDate(timestamp) {
       if (!timestamp) return '—';

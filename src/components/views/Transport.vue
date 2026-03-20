@@ -39,7 +39,7 @@ export default {
       loading: false,
       columns: [
         {key: 'created_at', title: 'Дата создания'},
-        {key: 'code', title: 'Код транспорта'},
+        {key: 'code', title: 'Номер транспортного средства'},
         {key: 'type_id', title: 'Тип транспорта'},
         {key: 'aggregator_id', title: 'Аггрегатор'},
       ]

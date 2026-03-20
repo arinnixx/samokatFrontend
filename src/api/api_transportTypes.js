@@ -41,4 +41,15 @@ export default {
         const response = await axiosInstance.post(`${API_URL}/transport-types`, data, getAuthHeader());
         return response.data;
     },
+
+    async deleteTransportType(id) {
+        try {
+            const response = await axiosInstance.delete(`${API_URL}/transport-types/${id}`, getAuthHeader());
+            return response.data;
+        } catch (error) {
+            console.error(error);
+            handleAuthError(error);
+            throw error;
+        }
+    },
 }

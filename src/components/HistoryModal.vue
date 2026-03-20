@@ -39,9 +39,9 @@
 export default {
   props: {
     modelValue: Boolean,
-    entityId: [Number, String],        // идентификатор сущности (курьера или заказа)
-    entityTitle: String,               // отображаемое название (например, "Иванов Иван" или "Заказ #123")
-    fetchHistory: Function,             // асинхронная функция, принимающая entityId и возвращающая данные истории
+    entityId: [Number, String],
+    entityTitle: String,
+    fetchHistory: Function,
   },
   emits: ['update:modelValue'],
   data() {

@@ -5,16 +5,17 @@
         :headers="columns"
         :items="ordersList"
         :loading="loading"
-        @edit="editOrder"
-        @delete="openConfirmDelete"
         @history="showHistory"
+        :show-history-button="true"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
       </template>
 
       <template v-slot:item.courier_id="{ item }">
+        <span class="clickable-text" @click="openModal('courier', item.courier_id)">
           {{ getCourierName(item.courier_id) }}
+          </span>
       </template>
 
       <template v-slot:item.aggregator_id="{ item }">
@@ -51,44 +52,13 @@
         :fields="modal.fields"
     />
 
-    <Modal
-        v-model="editModal.show"
-        mode="edit"
-        :title="editModal.title"
-        :item="editModal.item"
-        :fields="editModal.fields"
-        :api-method="editModal.apiMethod"
-        @created="fetchOrders"
-    />
-
-    <template>
       <HistoryModal
           v-model="showOrderHistoryModal"
           :entity-id="historyOrder?.id"
           :entity-title="`Смена #${historyOrder?.id}`"
           :fetch-history="api.getOrderHistory"
       />
-    </template>
 
-    <v-dialog v-model="confirmDialog.show" max-width="400">
-      <v-card>
-        <v-card-title class="text-h6">{{ confirmDialog.title }}</v-card-title>
-        <v-card-text>{{ confirmDialog.message }}</v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="secondary" variant="text" @click="confirmDialog.show = false">
-            Отмена
-          </v-btn>
-          <v-btn
-              color="error"
-              @click="confirmDelete"
-              :loading="confirmDialog.loading"
-          >
-            Удалить
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-main>
 </template>
 
@@ -103,6 +73,8 @@ import apiDeliveryBags from "@/api/api_deliveryBags.js";
 import apiDeliveryJackets from "@/api/api_deliveryJackets.js";
 import apiStatus from "@/api/api_statuses.js";
 import HistoryModal from "@/components/HistoryModal.vue";
+import apiPassport from "@/api/api_passport.js";
+import apiDriverLicense from "@/api/api_driverLicense.js";
 
 export default {
   components: {
@@ -120,6 +92,8 @@ export default {
       bagsMap: {},
       jacketsMap: {},
       statusMap: {},
+      passportNumberMap: {},
+      driverLicenseNumberMap: {},
       loading: false,
       showOrderHistoryModal: false,
       historyOrder: null,
@@ -131,23 +105,8 @@ export default {
         fields: []
       },
 
-      editModal: {
-        show: false,
-        title: 'Редактирование смены',
-        item: null,
-        fields: [],
-        apiMethod: null
-      },
-
-      confirmDialog: {
-        show: false,
-        title: 'Подтверждение удаления',
-        message: '',
-        item: null,
-        loading: false
-      },
-
       columns: [
+        {key: 'actions', title: 'Действия' },
         {key: 'created_at', title: 'Дата создания'},
         {key: 'aggregator_id', title: 'Аггрегатор'},
         {key: 'courier_id', title: 'Курьер'},
@@ -157,7 +116,7 @@ export default {
         {key: 'status_id', title: 'Статус'},
         {key: 'start_date', title: 'Дата начала смены'},
         {key: 'end_date', title: 'Дата окончания смены'},
-        { key: 'actions', title: 'Действия' }
+
       ]
     }
   },
@@ -176,6 +135,8 @@ export default {
           this.fetchBags(),
           this.fetchJackets(),
           this.fetchStatus(),
+          this.fetchPassportNumber(),
+          this.fetchDriverLicenseNumber(),
         ]);
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
@@ -342,12 +303,82 @@ export default {
       }
     },
 
+    async fetchPassportNumber() {
+      try {
+        const response = await apiPassport.getAllPassport();
+        console.log('Ответ API паспорта:', response);
+
+        let passportArray = [];
+        if (response?.items) {
+          passportArray = response.items;
+        } else if (Array.isArray(response)) {
+          passportArray = response;
+        } else {
+          passportArray = [];
+        }
+
+        passportArray.forEach(passport => {
+          if (passport && passport.id) {
+            this.passportNumberMap[passport.id] = passport.number || `Паспорт #${passport.id}`;
+            this.passportNumberMap[`full_${passport.id}`] = passport;
+          }
+        });
+
+        console.log('Загружено паспортов:', Object.keys(this.passportNumberMap).length);
+      } catch (error) {
+        console.error('Ошибка загрузки паспортов:', error);
+      }
+    },
+
+    async fetchDriverLicenseNumber() {
+      try {
+        const response = await apiDriverLicense.getAllDriverLicense();
+        console.log('Ответ API прав:', response);
+
+        let licenseArray = [];
+        if (response?.items) {
+          licenseArray = response.items;
+        } else if (Array.isArray(response)) {
+          licenseArray = response;
+        } else {
+          licenseArray = [];
+        }
+
+        licenseArray.forEach(license => {
+          if (license && license.id) {
+            this.driverLicenseNumberMap[license.id] = license.number || `Права #${license.id}`;
+            this.driverLicenseNumberMap[`full_${license.id}`] = license;
+          }
+        });
+
+        console.log('Загружено прав:', Object.keys(this.driverLicenseNumberMap).length);
+      } catch (error) {
+        console.error('Ошибка загрузки прав:', error);
+      }
+    },
+
     openModal(type, id) {
       let item = null;
       let title = '';
       let fields = [];
 
       switch(type) {
+        case 'courier':
+          item = this.couriersMap[`full_${id}`] || { id, name: this.getCourierName(id) };
+          title = 'Информация о курьере';
+          fields = [
+            { key: 'fullName', label: 'ФИО', getValue: (item) => this.getFullName(item)},
+            { key: 'gender', label: 'Пол'},
+            { key: 'citizenship', label: 'Гражданство'},
+            { key: 'phone', label: 'Телефон'},
+            { key: 'birthDate', label: 'Дата рождения'},
+            { key: 'email', label: 'Почта'},
+            { key: 'snils', label: 'Снилс'},
+            { key: 'inn', label: 'ИНН'},
+            { key: 'passport_id', label: 'Паспорт', getValue: (item) => this.getPassportNumber(item.passport_id)},
+            { key: 'driverLicense_id', label: 'Водительские права',getValue: (item) => this.getDriverLicenseNumber(item.driverLicense_id)},
+          ];
+          break;
           case 'transport':
           item = this.transportsMap[`full_${id}`] || { id, code: this.getTransportCode(id) };
           title = 'Информация о транспорте';
@@ -384,48 +415,26 @@ export default {
       };
     },
 
-
-    editOrder(item) {
-      const fields = [
-        {key: 'created_at', label: 'Дата создания', cols:12},
-        {key: 'aggregator_id', label: 'Аггрегатор', cols:12},
-        {key: 'courier_id', label: 'Курьер', cols:12},
-        {key: 'transport_id', label: 'Транспорт', cols:12},
-        {key: 'bag_id', label: 'Сумка курьера', cols:12},
-        {key: 'jacket_id', label: 'Куртка курьера', cols:12},
-        {key: 'status_id', label: 'Статус', cols:12},
-        {key: 'start_date', label: 'Дата начала смены', cols:12},
-        {key: 'end_date', label: 'Дата окончания смены', cols:12},
-      ];
-      this.editModal.item = {...item};
-      this.editModal.fields = fields;
-      this.editModal.apiMethod = (data) => api.updateOrder(item.id, data);
-      this.editModal.show = true;
-    },
-
     showHistory(item) {
       this.historyOrder = item;
       this.showOrderHistoryModal = true;
     },
 
-    openConfirmDelete(item) {
-      this.confirmDialog.message = `Вы действительно хотите удалить смену?`;
-      this.confirmDialog.item = item;
-      this.confirmDialog.show = true;
+    getFullName(item) {
+      const lastName = item.lastName || '';
+      const firstName = item.firstName || '';
+      const middleName = item.middleName || '';
+      return `${lastName} ${firstName} ${middleName}`.trim() || '—';
     },
 
-    async confirmDelete() {
-      if (!this.confirmDialog.item) return;
-      this.confirmDialog.loading = true;
-      try {
-        await api.deleteOrder(this.confirmDialog.item.id);
-        await this.fetchOrders();
-        this.confirmDialog.show = false;
-      } catch (error) {
-        console.error('Ошибка удаления:', error);
-      } finally {
-        this.confirmDialog.loading = false;
-      }
+    getPassportNumber(id) {
+      if (!id) return '—';
+      return this.passportNumberMap[id] || `ID: ${id}`;
+    },
+
+    getDriverLicenseNumber(id) {
+      if (!id) return '—';
+      return this.driverLicenseNumberMap[id] || `ID: ${id}`;
     },
 
     getCourierName(id) {

@@ -41,4 +41,15 @@ export default {
         const response = await axiosInstance.post(`${API_URL}/statuses`, data, getAuthHeader());
         return response.data;
     },
+
+    async deleteStatus(id) {
+        try {
+            const response = await axiosInstance.delete(`${API_URL}/statuses/${id}`, getAuthHeader());
+            return response.data;
+        } catch (error) {
+            console.error(error);
+            handleAuthError(error);
+            throw error;
+        }
+    },
 }

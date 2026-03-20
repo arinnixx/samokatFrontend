@@ -8,6 +8,8 @@
         :show-add-button="true"
         add-button-text="Создать статус"
         @add="openCreateModal"
+        @delete="openConfirmDelete"
+        :show-delete-button="true"
     >
       <template #item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -22,6 +24,25 @@
         :api-method="createStatus"
         @created="fetchStatuses"
     />
+    <v-dialog v-model="confirmDialog.show" max-width="400">
+      <v-card>
+        <v-card-title class="text-h6">{{ confirmDialog.title }}</v-card-title>
+        <v-card-text>{{ confirmDialog.message }}</v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="secondary" variant="text" @click="confirmDialog.show = false">
+            Отмена
+          </v-btn>
+          <v-btn
+              color="error"
+              @click="confirmDelete"
+              :loading="confirmDialog.loading"
+          >
+            Удалить
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-main>
 </template>
 
@@ -39,12 +60,20 @@ export default {
       showCreateModal: false,
       searchQuery: '',
       columns: [
+        {key: 'actions', title: 'Действия' },
         { key: 'created_at', title: 'Дата создания' },
         { key: 'status_name', title: 'Наименование статуса' }
       ],
       createFields: [
         { key: 'name', label: 'Название статуса', required: true, cols: 12 }
-      ]
+      ],
+      confirmDialog: {
+        show: false,
+        title: 'Подтверждение удаления',
+        message: '',
+        item: null,
+        loading: false
+      },
     };
   },
   computed: {
@@ -58,7 +87,7 @@ export default {
       this.loading = true;
       try {
         const data = await apiStatuses.getAllStatuses();
-        this.statusesList = data.items || data || [];
+        this.statusesList = (data.items || data || []).filter(c => !c.deleted_at);
       } catch (error) {
         console.error(error);
       } finally {
@@ -77,7 +106,27 @@ export default {
     },
     async createStatus(formData) {
       return await apiStatuses.createStatus(formData);
-    }
+    },
+
+    openConfirmDelete(item) {
+      this.confirmDialog.message = "Вы действительно хотите удалить статус?";
+      this.confirmDialog.item = item;
+      this.confirmDialog.show = true;
+    },
+
+    async confirmDelete() {
+      if (!this.confirmDialog.item) return;
+      this.confirmDialog.loading = true;
+      try {
+        await apiStatuses.deleteStatus(this.confirmDialog.item.id);
+        await this.fetchStatuses();
+        this.confirmDialog.show = false;
+      } catch (error) {
+        console.error('Ошибка удаления:', error);
+      } finally {
+        this.confirmDialog.loading = false;
+      }
+    },
   }
 };
 </script>

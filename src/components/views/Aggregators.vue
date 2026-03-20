@@ -5,23 +5,40 @@
         :headers="columns"
         :items="aggregatorList"
         :loading="loading"
-        :show-add-button="true"
-        add-button-text="Создать аггрегатора"
-        @add="openCreateModal"
+        :show-change-password-button="true"
+        @change-password="openPasswordModal"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
       </template>
 
+      <template #item.isBlocked="{ item }">
+        <div v-if="isAdmin" class="d-flex align-center" style="gap: 4px;">
+          <v-switch
+              v-model="item.isBlocked"
+              hide-details
+              inset
+              size="x-small"
+              density="compact"
+              @update:model-value="toggleBlock(item)"
+          />
+          <span style="font-size: 14px;">
+      {{ item.isBlocked ? 'Заблокирован' : 'Активен' }}
+    </span>
+        </div>
+        <span v-else style="font-size: 14px;">
+    {{ item.isBlocked ? 'Заблокирован' : 'Активен' }}
+  </span>
+      </template>
     </DataTable>
 
     <Modal
-        v-model="showCreateModal"
+        v-model="showPasswordModal"
         mode="create"
-        title="Создание аггрегатора"
-        :fields="createFields"
-        :api-method="createAggregator"
-        @created="fetchAggregators"
+        title="Смена пароля агрегатора"
+        :fields="passwordFields"
+        :api-method="resetPassword"
+        @created="onPasswordChanged"
     />
   </v-main>
 </template>
@@ -30,58 +47,89 @@
 import DataTable from '@/components/DataTable.vue'
 import api from "@/api/api_aggregator.js";
 import Modal from "@/components/Modal.vue";
-import apiAggregator from "@/api/api_aggregator.js";
 
 export default {
   components: {
     Modal,
     DataTable
   },
-  data(){
-    return{
+  data() {
+    return {
       aggregatorList: [],
       loading: false,
       showCreateModal: false,
+      showPasswordModal: false,
+      selectedAggregator: null,
       columns: [
-        {key: 'created_at', title: 'Дата создания'},
-        {key: 'name', title: 'Название'},
+        { key: 'actions', title: 'Действия' },
+        { key: 'isBlocked', title: 'Статус' },
+        { key: 'created_at', title: 'Дата создания' },
+        { key: 'name', title: 'Название' },
       ],
-      createFields: [
-        { key: 'name', label: 'Название аггрегатора', required: true, cols: 12 },
-        { key: 'login', label: 'Логин', required: true, cols: 12 },
-        { key: 'password', label: 'Пароль', required: true, cols: 12, },
+      passwordFields: [
+        { key: 'newPassword', label: 'Новый пароль', required: true, type: 'password', cols: 12 },
+        { key: 'confirmPassword', label: 'Подтвердите пароль', required: true, type: 'password', confirm: 'newPassword', cols: 12 }
       ]
     }
   },
-  async created(){
-    await this.fetchAggregators()
+  computed: {
+    isAdmin() {
+      return !!localStorage.getItem('admin');
+    }
+  },
+  async created() {
+    await this.fetchAggregators();
   },
   methods: {
-    async fetchAggregators(){
-      try{
-        this.aggregatorList = await api.getAllAggregators();
-      }catch(error){
+    async fetchAggregators() {
+      try {
+        const data = await api.getAllAggregators();
+        this.aggregatorList = data.items || data;
+      } catch (error) {
         console.error(error)
       }
     },
 
     formatDate(timestamp) {
       if (!timestamp) return '—';
-
       const date = new Date(parseInt(timestamp) * 1000);
-
       return date.toLocaleString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
       });
     },
-    openCreateModal() {
-      this.showCreateModal = true;
+
+    openPasswordModal(item) {
+      this.selectedAggregator = item;
+      this.showPasswordModal = true;
     },
-    async createAggregator(formData) {
-      return await apiAggregator.createAggregator(formData);
+
+    async resetPassword(formData) {
+      return await api.resetAggregatorPassword(this.selectedAggregator.id, formData.newPassword);
+    },
+
+    onPasswordChanged() {
+      this.showPasswordModal = false;
+      this.$emit('show-message', { text: 'Пароль успешно изменён', type: 'success' });
+    },
+
+    async toggleBlock(item) {
+      try {
+        const newStatus = item.isBlocked;
+        await api.toggleAggregatorBlock(item.id, newStatus);
+      } catch (error) {
+        console.error('Ошибка при изменении статуса:', error);
+        item.isBlocked = !item.isBlocked;
+      }
     }
   }
 }
 </script>
+
+<style scoped>
+:deep(.v-switch) {
+  transform: scale(0.7);
+  transform-origin: left center;
+}
+</style>

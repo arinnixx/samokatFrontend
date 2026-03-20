@@ -34,8 +34,7 @@
               density="compact"
               hide-details
               variant="outlined"
-              rounded="lg"
-              @update:model-value="onSearchInput"
+              class="custom-search"
           >
             <template v-slot:prepend-inner>
               <img
@@ -50,7 +49,6 @@
           <v-btn
               variant="outlined"
               class="filter-button"
-              rounded="lg"
               @click="$emit('filters')"
           >
 
@@ -102,23 +100,29 @@
               </v-btn>
             </template>
             <v-list>
-              <v-list-item @click="$emit('edit', item)">
+              <v-list-item v-if="props.showEditButton" @click="$emit('edit', item)">
                 <template v-slot:prepend>
                   <img src="/src/components/icons/edit.svg" width="14" height="14">
                 </template>
                 <v-list-item-title class="menu-text">Редактировать</v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="$emit('delete', item)">
+              </v-list-item >
+              <v-list-item  v-if="props.showDeleteButton"@click="$emit('delete', item)">
                 <template v-slot:prepend>
                   <img src="/src/components/icons/delete.svg" width="14" height="14">
                 </template>
                 <v-list-item-title class="menu-text">Удалить</v-list-item-title>
               </v-list-item>
-              <v-list-item @click="$emit('history', item)">
+              <v-list-item v-if="props.showHistoryButton" @click="$emit('history', item)">
                 <template v-slot:prepend>
                   <img src="/src/components/icons/history.svg" width="14" height="14">
                 </template>
                 <v-list-item-title class="menu-text">История</v-list-item-title>
+              </v-list-item>
+              <v-list-item v-if="props.showChangePasswordButton" @click="$emit('changePassword', item)">
+                <template v-slot:prepend>
+                  <img src="/src/components/icons/key.svg" width="14" height="14">
+                </template>
+                <v-list-item-title class="menu-text">Сменить пароль</v-list-item-title>
               </v-list-item>
             </v-list>
           </v-menu>
@@ -160,10 +164,13 @@ const props = defineProps({
   addButtonText: { type: String, default: 'Создать' },
   searchPlaceholder: { type: String, default: 'Поиск...' },
   searchValue: { type: String, default: '' },
-
+  showEditButton: { type: Boolean, default: false },
+  showDeleteButton: { type: Boolean, default: false },
+  showHistoryButton: { type: Boolean, default: false },
+  showChangePasswordButton: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['edit', 'delete', 'history']);
+const emit = defineEmits(['edit', 'delete', 'history', 'add', 'filters', 'update:search-value','changePassword']);
 
 const normalizedItems = computed(() => {
   if (!props.items) return [];
@@ -184,6 +191,16 @@ const normalizedItems = computed(() => {
   return [];
 });
 
+const searchModel = ref(props.searchValue);
+
+watch(searchModel, (val) => {
+  emit('update:search-value', val);
+});
+
+watch(() => props.searchValue, (val) => {
+  searchModel.value = val;
+});
+
 </script>
 
 <style scoped>
@@ -198,7 +215,7 @@ const normalizedItems = computed(() => {
   width: 100%;
   max-width: none;
   background-color: white;
-  padding: 24px 32px;
+  padding: 24px  24px 32px 0;
   border-radius: 0;
 }
 
@@ -238,6 +255,11 @@ const normalizedItems = computed(() => {
 .filter-button{
   border-color: lightgray;
   font-weight: 600;
+  border-radius: 10px;
+}
+
+.custom-search :deep(.v-field) {
+  border-radius: 10px;
 }
 
 

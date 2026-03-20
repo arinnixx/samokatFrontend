@@ -41,4 +41,15 @@ export default {
         const response = await axiosInstance.post(`${API_URL}/violations-type`, data, getAuthHeader());
         return response.data;
     },
+
+    async deleteViolationsType(id) {
+        try {
+            const response = await axiosInstance.delete(`${API_URL}/violations-type/${id}`, getAuthHeader());
+            return response.data;
+        } catch (error) {
+            console.error(error);
+            handleAuthError(error);
+            throw error;
+        }
+    },
 }

@@ -133,6 +133,7 @@
             variant="tonal"
             class="mb-4 mt-6"
             closable
+            :icon="false"
             @click:close="errorMessage = ''"
         >
           {{ errorMessage }}

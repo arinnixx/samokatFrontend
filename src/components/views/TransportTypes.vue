@@ -3,13 +3,14 @@
     <DataTable
         header-title="Тип транспорта"
         :headers="columns"
-        :items="transportTypesList"
+        :items="filteredItems"
         :loading="loading"
         :show-add-button="true"
         add-button-text="Создать тип транспорта"
         @add="openCreateModal"
         @delete="openConfirmDelete"
         :show-delete-button="true"
+        @update:search-value="onSearchChange"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -64,6 +65,7 @@ export default {
       transportTypesList: [],
       loading: false,
       showCreateModal: false,
+      searchQuery: '',
       columns: [
         {key: 'actions', title: 'Действия' },
         {key: 'created_at', title: 'Дата создания'},
@@ -82,10 +84,22 @@ export default {
       },
     }
   },
+  computed: {
+    filteredItems() {
+      if (!this.searchQuery) return this.transportTypesList;
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.transportTypesList.filter(item =>
+          item.name?.toLowerCase().includes(q)
+      );
+    },
+  },
   async created(){
     await this.fetchTransportTypes()
   },
   methods:{
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
+    },
     async fetchTransportTypes(){
       try {
         const data = await api.getAllTransportTypes();

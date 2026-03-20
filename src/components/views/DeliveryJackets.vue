@@ -3,8 +3,9 @@
     <DataTable
         title="Куртки курьеров"
         :headers="columns"
-        :items="deliveryJacketsList"
+        :items="filteredItems"
         :loading="loading"
+        @update:search-value="onSearchChange"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -31,6 +32,7 @@ export default {
       deliveryJacketsList: [],
       aggregatorsMap: {},
       loading: false,
+      searchQuery: '',
       columns: [
         {key: 'created_at', title: 'Дата создания'},
         {key: 'code', title: 'Код куртки'},
@@ -38,10 +40,26 @@ export default {
       ]
     }
   },
+  computed: {
+    filteredItems() {
+      if (!this.searchQuery) return this.deliveryJacketsList;
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.deliveryJacketsList.filter(item => {
+        const aggregatorName = this.getAggregatorName(item.aggregator_id).toLowerCase();
+        return (
+            item.code?.toLowerCase().includes(q) ||
+            aggregatorName.includes(q)
+        );
+      });
+    },
+  },
   async created(){
     await this.loadData()
   },
   methods:{
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
+    },
     async loadData() {
       this.loading = true;
       try {
@@ -58,7 +76,8 @@ export default {
 
     async fetchDeliveryJackets(){
       try{
-        this.deliveryJacketsList = await api.getAllDeliveryJackets();
+        const data = await api.getAllDeliveryJackets();
+        this.deliveryJacketsList = data.items || (Array.isArray(data) ? data : []);
       }catch(error){
         console.error(error)
       }

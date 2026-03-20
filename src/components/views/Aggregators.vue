@@ -3,10 +3,11 @@
     <DataTable
         header-title="Управление пользователями"
         :headers="columns"
-        :items="aggregatorList"
+        :items="filteredItems"
         :loading="loading"
         :show-change-password-button="true"
         @change-password="openPasswordModal"
+        @update:search-value="onSearchChange"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -60,6 +61,7 @@ export default {
       showCreateModal: false,
       showPasswordModal: false,
       selectedAggregator: null,
+      searchQuery: '',
       columns: [
         { key: 'actions', title: 'Действия' },
         { key: 'isBlocked', title: 'Статус' },
@@ -75,6 +77,18 @@ export default {
   computed: {
     isAdmin() {
       return !!localStorage.getItem('admin');
+    },
+    filteredItems() {
+      if (!this.searchQuery) return this.aggregatorList;
+
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.aggregatorList.filter(item => {
+        const blockedText = item.isBlocked ? 'Заблокирован' : 'Активен';
+        return (
+            (item.name?.toLowerCase().includes(q)) ||
+            (blockedText.toLowerCase().includes(q))
+        );
+      });
     }
   },
   async created() {
@@ -122,7 +136,10 @@ export default {
         console.error('Ошибка при изменении статуса:', error);
         item.isBlocked = !item.isBlocked;
       }
-    }
+    },
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
+    },
   }
 }
 </script>

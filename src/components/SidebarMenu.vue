@@ -40,9 +40,6 @@
           <v-list-item-title>Типы транспорта</v-list-item-title>
         </v-list-item>
 
-        <v-list-item v-if="isAdmin"  to="/transport" class="custom-list-item">
-          <v-list-item-title>Транспорт</v-list-item-title>
-        </v-list-item>
       </v-list-group>
 
       <v-list-item v-if="isAdmin" to="/aggregators" class="custom-list-item">Агрегаторы</v-list-item>
@@ -51,6 +48,7 @@
       <v-list-item v-if="isAdmin" to="/courier-violations" class="custom-list-item">Нарушения курьера</v-list-item>
       <v-list-item v-if="isAdmin" to="/couriers-aggregator" class="custom-list-item">Работа</v-list-item>
       <v-list-item v-if="isAdmin"  to="/orders" class="custom-list-item">Смена</v-list-item>
+      <v-list-item v-if="isAdmin"  to="/transport" class="custom-list-item">Транспорт</v-list-item>
     </v-list>
 
 

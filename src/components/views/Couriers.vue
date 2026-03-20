@@ -114,6 +114,8 @@ export default {
 
       const q = this.searchQuery.toLowerCase().trim();
       return this.couriersList.filter(item => {
+        const passportNumber = this.passportNumberMap[item.passport_id] || '';
+        const driverLicenseNumber = this.driverLicenseNumberMap[item.driverLicense_id] || '';
         return (
             (item.lastName?.toLowerCase().includes(q)) ||
             (item.firstName?.toLowerCase().includes(q)) ||
@@ -121,7 +123,10 @@ export default {
             (item.phone?.includes(q)) ||
             (item.email?.toLowerCase().includes(q)) ||
             (item.snils?.includes(q)) ||
-            (item.inn?.includes(q))
+            (item.inn?.includes(q))||
+            passportNumber.toLowerCase().includes(q)||
+            driverLicenseNumber.toLowerCase().includes(q)
+
         );
       });
     }

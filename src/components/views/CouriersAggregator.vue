@@ -3,8 +3,9 @@
     <DataTable
         title="Работа"
         :headers="columns"
-        :items="couriersAggregatorList"
+        :items="filteredItems"
         :loading="loading"
+        @update:search-value="onSearchChange"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -45,6 +46,7 @@ export default {
       couriersMap: {},
       aggregatorsMap: {},
       loading: false,
+      searchQuery: '',
       columns: [
         {key: 'created_at', title: 'Дата создания'},
         {key: 'start_date', title: 'Дата начала работы'},
@@ -53,6 +55,24 @@ export default {
         {key: 'aggregator_id', title: 'Агрегатор'},
       ]
     }
+  },
+  computed: {
+    filteredItems() {
+      if (!this.searchQuery) return this.couriersAggregatorList;
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.couriersAggregatorList.filter(item => {
+        const courierName = this.getCourierName(item.couriers_id).toLowerCase();
+        const aggregatorName = this.getAggregatorName(item.aggregator_id).toLowerCase();
+        const startDate = this.formatDate(item.start_date);
+        const endDate = this.formatDate(item.end_date);
+        return (
+            courierName.includes(q) ||
+            aggregatorName.includes(q) ||
+            startDate.includes(q) ||
+            endDate.includes(q)
+        );
+      });
+    },
   },
   async created(){
     await this.loadData()
@@ -145,6 +165,10 @@ export default {
     getAggregatorName(id) {
       if (!id) return '—';
       return this.aggregatorsMap[id] || `ID: ${id}`;
+    },
+
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
     },
 
     formatDate(timestamp) {

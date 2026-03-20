@@ -3,13 +3,14 @@
     <DataTable
         header-title="Статусы"
         :headers="columns"
-        :items="statusesList"
+        :items="filteredItems"
         :loading="loading"
         :show-add-button="true"
         add-button-text="Создать статус"
         @add="openCreateModal"
         @delete="openConfirmDelete"
         :show-delete-button="true"
+        @update:search-value="onSearchChange"
     >
       <template #item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -77,12 +78,21 @@ export default {
     };
   },
   computed: {
-
+    filteredItems() {
+      if (!this.searchQuery) return this.statusesList;
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.statusesList.filter(item =>
+          item.status_name?.toLowerCase().includes(q)
+      );
+    },
   },
   async created() {
     await this.fetchStatuses();
   },
   methods: {
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
+    },
     async fetchStatuses() {
       this.loading = true;
       try {

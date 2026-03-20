@@ -3,8 +3,9 @@
     <DataTable
         title="Смена"
         :headers="columns"
-        :items="ordersList"
+        :items="filteredItems"
         :loading="loading"
+        @update:search-value="onSearchChange"
         @history="showHistory"
         :show-history-button="true"
     >
@@ -41,7 +42,15 @@
       </template>
 
       <template v-slot:item.status_id="{ item }">
-          {{ getStatusName(item.status_id) }}
+        {{ getStatusName(item.status_id) }}
+      </template>
+
+      <template v-slot:item.start_date="{ item }">
+        {{ formatDateAndTime(item.start_date) }}
+      </template>
+
+      <template v-slot:item.end_date="{ item }">
+        {{ formatDateAndTime(item.end_date) }}
       </template>
     </DataTable>
 
@@ -97,6 +106,7 @@ export default {
       loading: false,
       showOrderHistoryModal: false,
       historyOrder: null,
+      searchQuery: '',
 
       modal: {
         show: false,
@@ -120,10 +130,39 @@ export default {
       ]
     }
   },
+  computed: {
+    filteredItems() {
+      if (!this.searchQuery) return this.ordersList;
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.ordersList.filter(item => {
+        const courierName = this.getCourierName(item.courier_id).toLowerCase();
+        const aggregatorName = this.getAggregatorName(item.aggregator_id).toLowerCase();
+        const transportCode = this.getTransportCode(item.transport_id).toLowerCase();
+        const bagCode = this.getDeliveryBagsCode(item.bag_id).toLowerCase();
+        const jacketCode = this.getDeliveryJacketsCode(item.jacket_id).toLowerCase();
+        const statusName = this.getStatusName(item.status_id).toLowerCase();
+        const startDate = this.formatDateAndTime(item.start_date);
+        const endDate = this.formatDateAndTime(item.end_date);
+        return (
+            courierName.includes(q) ||
+            aggregatorName.includes(q) ||
+            transportCode.includes(q) ||
+            bagCode.includes(q) ||
+            jacketCode.includes(q) ||
+            statusName.includes(q) ||
+            startDate.includes(q) ||
+            endDate.includes(q)
+        );
+      });
+    },
+  },
   async created(){
     await this.loadData()
   },
   methods:{
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
+    },
     async loadData() {
       this.loading = true;
       try {
@@ -474,6 +513,18 @@ export default {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+      });
+    },
+
+    formatDateAndTime(timestamp) {
+      if (!timestamp) return '—';
+      const date = new Date(parseInt(timestamp) * 1000);
+      return date.toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       });
     }
   }

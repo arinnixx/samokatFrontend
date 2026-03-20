@@ -3,13 +3,14 @@
     <DataTable
         header-title="Типы нарушений"
         :headers="columns"
-        :items="violationsTypeList"
+        :items="filteredItems"
         :loading="loading"
         :show-add-button="true"
         add-button-text="Создать тип нарушения"
         @add="openCreateModal"
         @delete="openConfirmDelete"
         :show-delete-button="true"
+        @update:search-value="onSearchChange"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -65,6 +66,7 @@ export default {
       violationsTypeList: [],
       loading: false,
       showCreateModal: false,
+      searchQuery: '',
       columns: [
         {key: 'actions', title: 'Действия' },
         {key: 'created_at', title: 'Дата создания'},
@@ -85,10 +87,23 @@ export default {
       },
     }
   },
+  computed: {
+    filteredItems() {
+      if (!this.searchQuery) return this.violationsTypeList;
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.violationsTypeList.filter(item =>
+          item.category?.toLowerCase().includes(q) ||
+          item.code?.toLowerCase().includes(q)
+      );
+    },
+  },
   async created(){
     await this.fetchViolationsType();
   },
   methods: {
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
+    },
     async fetchViolationsType() {
       try {
         const data = await api.getAllViolationType();

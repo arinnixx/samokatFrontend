@@ -3,8 +3,9 @@
     <DataTable
         title="Нарушения курьера"
         :headers="columns"
-        :items="courierViolationsList"
+        :items="filteredItems"
         :loading="loading"
+        @update:search-value="onSearchChange"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -60,6 +61,7 @@ export default {
       couriersMap: {},
       violationsTypeMap: {},
       loading: false,
+      searchQuery: '',
       mapModal: {
         show: false,
         coordinates: null
@@ -75,10 +77,33 @@ export default {
       ]
     }
   },
+  computed: {
+    filteredItems() {
+      if (!this.searchQuery) return this.courierViolationsList;
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.courierViolationsList.filter(item => {
+        const courierName = this.couriersMap[item.courier_id] || '';
+        const violationType = this.violationsTypeMap[item.violation_type_id] || '';
+        const dateVl = this.formatDate(item.violation_date);
+        return (
+            item.incident_details?.toLowerCase().includes(q) ||
+            item.operator_comment?.toLowerCase().includes(q) ||
+            courierName.toLowerCase().includes(q) ||
+            violationType.toLowerCase().includes(q) ||
+            item.id?.toString().includes(q)||
+            dateVl.includes(q)
+
+        );
+      });
+    }
+  },
   async created(){
     await this.loadData()
   },
   methods: {
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
+    },
     async loadData() {
       this.loading = true;
       try {
@@ -123,7 +148,8 @@ export default {
 
     async fetchCourierViolations(){
       try{
-        this.courierViolationsList = await api.getAllCourierViolations();
+        const data = await api.getAllCourierViolations();
+        this.courierViolationsList = data.items || (Array.isArray(data) ? data : []);
       }catch(error){
         console.error(error)
       }

@@ -3,8 +3,9 @@
     <DataTable
         title="Логи"
         :headers="columns"
-        :items="requestLogData"
+        :items="filteredItems"
         :loading="loading"
+        @update:search-value="onSearchChange"
     >
 
       <template v-slot:item.request_data="{ item }">
@@ -36,6 +37,7 @@ export default {
     return{
       requestLogData: [],
       loading: false,
+      searchQuery: '',
       columns: [
         {key: 'id', title: 'Id', width: '80px'},
         {key: 'request_data', title: 'Данные запроса', width: '420px'},
@@ -43,10 +45,26 @@ export default {
       ]
     }
   },
+  computed: {
+    filteredItems() {
+      if (!this.searchQuery) return this.requestLogData;
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.requestLogData.filter(item => {
+        const dateStr = this.formatDate(item.created_at);
+        return (
+            item.id?.toString().includes(q) ||
+            dateStr.includes(q)
+        );
+      });
+    }
+  },
   async created(){
     await this.fetchRequestLogs()
   },
   methods: {
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
+    },
     async fetchRequestLogs(){
       this.loading = true;
       try{

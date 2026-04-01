@@ -6,6 +6,8 @@
         :items="filteredItems"
         :loading="loading"
         @update:search-value="onSearchChange"
+        @filters="openFilters"
+        :show-filter-button="true"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -15,6 +17,14 @@
         {{ getAggregatorName(item.aggregator_id) }}
       </template>
     </DataTable>
+
+    <FilterModal
+        v-model="filterModalVisible"
+        :fields="filterFields"
+        :initial-filters="currentFilters"
+        @apply="applyFilters"
+        @reset="resetFilters"
+    />
   </v-main>
 </template>
 
@@ -22,9 +32,11 @@
 import DataTable from '@/components/DataTable.vue'
 import api from "@/api/api_deliveryBags.js";
 import apiAggregators from "@/api/api_aggregator.js";
+import FilterModal from "@/components/FilterModal.vue";
 
 export default {
   components: {
+    FilterModal,
     DataTable
   },
   data(){
@@ -33,6 +45,18 @@ export default {
       aggregatorsMap: {},
       loading: false,
       searchQuery: '',
+      filterModalVisible: false,
+      filterFields: [
+        {
+          key: 'aggregatorId',
+          label: 'Агрегатор',
+          type: 'select',
+          items: [],
+          itemTitle: 'name',
+          itemValue: 'id'
+        }
+      ],
+      currentFilters: {},
       columns: [
         {key: 'created_at', title: 'Дата создания'},
         {key: 'code', title: 'Код сумки'},
@@ -42,15 +66,23 @@ export default {
   },
   computed: {
     filteredItems() {
-      if (!this.searchQuery) return this.deliveryBagsList;
-      const q = this.searchQuery.toLowerCase().trim();
-      return this.deliveryBagsList.filter(item => {
-        const aggregatorName = this.getAggregatorName(item.aggregator_id).toLowerCase();
-        return (
-            item.code?.toLowerCase().includes(q) ||
-            aggregatorName.includes(q)
-        );
-      });
+      let result = this.deliveryBagsList;
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase().trim();
+        result = result.filter(item => {
+          const aggregatorName = this.getAggregatorName(item.aggregator_id).toLowerCase();
+          return (
+              item.code?.toLowerCase().includes(q) ||
+              aggregatorName.includes(q)
+          );
+        });
+      }
+
+      if (this.currentFilters.aggregatorId) {
+        result = result.filter(item => item.aggregator_id === this.currentFilters.aggregatorId);
+      }
+
+      return result;
     },
   },
   async created(){
@@ -65,7 +97,8 @@ export default {
       try {
         await Promise.all([
           this.fetchDeliveryBags(),
-          this.fetchAggregators()
+          this.fetchAggregators(),
+          this.fetchAggregatorsForFilter()
         ]);
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
@@ -109,6 +142,13 @@ export default {
       }
     },
 
+    async fetchAggregatorsForFilter() {
+      const data = await apiAggregators.getAllAggregators();
+      const aggregators = data.items || data || [];
+      const aggregatorField = this.filterFields.find(f => f.key === 'aggregatorId');
+      if (aggregatorField) aggregatorField.items = aggregators;
+    },
+
     getAggregatorName(id) {
       if (!id) return '—';
       return this.aggregatorsMap[id] || `ID: ${id}`;
@@ -124,7 +164,17 @@ export default {
         month: '2-digit',
         year: 'numeric',
       });
-    }
+    },
+
+    openFilters() {
+      this.filterModalVisible = true;
+    },
+    applyFilters(filters) {
+      this.currentFilters = filters;
+    },
+    resetFilters() {
+      this.currentFilters = {};
+    },
   }
 }
 

@@ -1,6 +1,6 @@
 <template>
   <v-dialog v-model="dialog" max-width="700" content-class="history-dialog">
-    <v-card>
+    <v-card class="custom-card">
       <v-card-title class="d-flex justify-space-between align-center">
         <span class="text-h6">История изменений: {{ entityTitle }}</span>
       </v-card-title>
@@ -115,6 +115,10 @@ export default {
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.custom-card {
+  border-radius: 14px;
 }
 
 :deep(.history-dialog) {

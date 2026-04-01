@@ -40,6 +40,10 @@
           <v-list-item-title>Типы транспорта</v-list-item-title>
         </v-list-item>
 
+        <v-list-item v-if="isAdmin"  to="/obdii" class="custom-list-item">
+          <v-list-item-title>Устройство</v-list-item-title>
+        </v-list-item>
+
       </v-list-group>
 
       <v-list-item v-if="isAdmin" to="/aggregators" class="custom-list-item">Агрегаторы</v-list-item>

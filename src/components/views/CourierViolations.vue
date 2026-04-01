@@ -6,6 +6,8 @@
         :items="filteredItems"
         :loading="loading"
         @update:search-value="onSearchChange"
+        @filters="openFilters"
+        :show-filter-button="true"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -28,7 +30,7 @@
             v-if="item.location?.coordinates"
             variant="text"
             color="primary"
-            @click="openMapModal(item.location)"
+            @click="openMapModal(item.location, item)"
         >
           Посмотреть на карте
         </v-btn>
@@ -39,6 +41,15 @@
     <ViolationMapModal
         v-model="mapModal.show"
         :coordinates="mapModal.coordinates"
+        :violation="mapModal.violation"
+    />
+
+    <FilterModal
+        v-model="filterModalVisible"
+        :fields="filterFields"
+        :initial-filters="currentFilters"
+        @apply="applyFilters"
+        @reset="resetFilters"
     />
   </v-main>
 </template>
@@ -49,11 +60,13 @@ import api from "@/api/api_courierViolations.js";
 import apiCouriers from "@/api/api_couriers.js";
 import apiViolationsType from "@/api/api_violationsType.js";
 import ViolationMapModal from "@/components/ViolationMapModal.vue";
+import FilterModal from "@/components/FilterModal.vue";
 
 export default {
   components: {
     ViolationMapModal,
-    DataTable
+    DataTable,
+    FilterModal
   },
   data(){
     return{
@@ -62,9 +75,30 @@ export default {
       violationsTypeMap: {},
       loading: false,
       searchQuery: '',
+      filterModalVisible: false,
+      filterFields: [
+        {
+          key: 'violationTypeId',
+          label: 'Тип нарушения',
+          type: 'select',
+          items: [],
+          itemTitle: 'category',
+          itemValue: 'id'
+        },
+        {
+          key: 'dateRange',
+          type: 'daterange',
+          startKey: 'startDate',
+          endKey: 'endDate',
+          startLabel: 'Дата от',
+          endLabel: 'Дата до'
+        }
+      ],
+      currentFilters: {},
       mapModal: {
         show: false,
-        coordinates: null
+        coordinates: null,
+        violation: null
       },
       columns: [
         {key: 'created_at', title: 'Дата создания'},
@@ -79,22 +113,45 @@ export default {
   },
   computed: {
     filteredItems() {
-      if (!this.searchQuery) return this.courierViolationsList;
-      const q = this.searchQuery.toLowerCase().trim();
-      return this.courierViolationsList.filter(item => {
-        const courierName = this.couriersMap[item.courier_id] || '';
-        const violationType = this.violationsTypeMap[item.violation_type_id] || '';
-        const dateVl = this.formatDate(item.violation_date);
-        return (
-            item.incident_details?.toLowerCase().includes(q) ||
-            item.operator_comment?.toLowerCase().includes(q) ||
-            courierName.toLowerCase().includes(q) ||
-            violationType.toLowerCase().includes(q) ||
-            item.id?.toString().includes(q)||
-            dateVl.includes(q)
+      let result = this.courierViolationsList;
 
-        );
-      });
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase().trim();
+        result = result.filter(item => {
+          const courierName = this.couriersMap[item.courier_id] || '';
+          const violationType = this.violationsTypeMap[item.violation_type_id] || '';
+          const dateVl = this.formatDate(item.violation_date);
+          return (
+              item.incident_details?.toLowerCase().includes(q) ||
+              item.operator_comment?.toLowerCase().includes(q) ||
+              courierName.toLowerCase().includes(q) ||
+              violationType.toLowerCase().includes(q) ||
+              item.id?.toString().includes(q) ||
+              dateVl.includes(q)
+          );
+        });
+      }
+
+      if (this.currentFilters.violationTypeId) {
+        result = result.filter(item => item.violation_type_id === this.currentFilters.violationTypeId);
+      }
+
+      if (this.currentFilters.startDate && this.currentFilters.endDate) {
+        const start = new Date(this.currentFilters.startDate).getTime() / 1000;
+        const end = new Date(this.currentFilters.endDate).getTime() / 1000 + 86400 - 1;
+        result = result.filter(item => {
+          const ts = item.violation_date;
+          return ts >= start && ts <= end;
+        });
+      } else if (this.currentFilters.startDate) {
+        const start = new Date(this.currentFilters.startDate).getTime() / 1000;
+        result = result.filter(item => item.violation_date >= start);
+      } else if (this.currentFilters.endDate) {
+        const end = new Date(this.currentFilters.endDate).getTime() / 1000 + 86400 - 1;
+        result = result.filter(item => item.violation_date <= end);
+      }
+
+      return result;
     }
   },
   async created(){
@@ -110,7 +167,8 @@ export default {
         await Promise.all([
           this.fetchCourierViolations(),
           this.fetchCouriers(),
-          this.fetchViolationsType()
+          this.fetchViolationsType(),
+          this.fetchFilterOptions()
         ]);
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
@@ -181,6 +239,12 @@ export default {
       }
     },
 
+    async fetchFilterOptions() {
+      const data = await apiViolationsType.getAllViolationType();
+      const types = data.items || data || [];
+      const typeField = this.filterFields.find(f => f.key === 'violationTypeId');
+      if (typeField) typeField.items = types;
+    },
 
     getCourierName(id) {
       if (!id) return '—';
@@ -192,21 +256,35 @@ export default {
       return this.violationsTypeMap[id] || `ID: ${id}`;
     },
 
-    openMapModal(location) {
+    openMapModal(location, violationItem) {
+      const typeId = violationItem.violation_type_id;
+      const typeName = this.violationsTypeMap[typeId] || `Тип нарушения #${typeId}`;
+      this.mapModal.violation = {
+        typeName,
+        description: violationItem.incident_details || '—'
+      };
       this.mapModal.coordinates = location;
       this.mapModal.show = true;
     },
 
     formatDate(timestamp) {
       if (!timestamp) return '—';
-
       const date = new Date(parseInt(timestamp) * 1000);
-
       return date.toLocaleString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
       });
+    },
+
+    openFilters() {
+      this.filterModalVisible = true;
+    },
+    applyFilters(filters) {
+      this.currentFilters = filters;
+    },
+    resetFilters() {
+      this.currentFilters = {};
     }
   }
 }

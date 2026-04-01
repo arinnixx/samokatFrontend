@@ -4,7 +4,7 @@
       @update:model-value="$emit('update:modelValue', $event)"
       max-width="600"
   >
-    <v-card>
+    <v-card class="custom-card">
       <v-card-title class="d-flex justify-space-between align-center">
         <span class="text-h6">{{ title }}</span>
       </v-card-title>
@@ -264,5 +264,9 @@ export default {
 }
 .modal-content::-webkit-scrollbar-thumb:hover {
   background: #034578;
+}
+
+.custom-card {
+  border-radius: 14px;
 }
 </style>

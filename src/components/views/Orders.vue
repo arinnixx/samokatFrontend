@@ -6,8 +6,10 @@
         :items="filteredItems"
         :loading="loading"
         @update:search-value="onSearchChange"
+        @filters="openFilters"
         @history="showHistory"
         :show-history-button="true"
+        :show-filter-button="true"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -16,11 +18,11 @@
       <template v-slot:item.courier_id="{ item }">
         <span class="clickable-text" @click="openModal('courier', item.courier_id)">
           {{ getCourierName(item.courier_id) }}
-          </span>
+        </span>
       </template>
 
       <template v-slot:item.aggregator_id="{ item }">
-          {{ getAggregatorName(item.aggregator_id) }}
+        {{ getAggregatorName(item.aggregator_id) }}
       </template>
 
       <template v-slot:item.transport_id="{ item }">
@@ -61,13 +63,21 @@
         :fields="modal.fields"
     />
 
-      <HistoryModal
-          v-model="showOrderHistoryModal"
-          :entity-id="historyOrder?.id"
-          :entity-title="`Смена #${historyOrder?.id}`"
-          :fetch-history="api.getOrderHistory"
-      />
+    <HistoryModal
+        v-model="showOrderHistoryModal"
+        :entity-id="historyOrder?.id"
+        :entity-title="`Смена #${historyOrder?.id}`"
+        :fetch-history="api.getOrderHistory"
+    />
 
+    <FilterModal
+        v-model="filterModalVisible"
+        :fields="filterFields"
+        :initial-filters="currentFilters"
+        :show-partial-switch="true"
+        @apply="applyFilters"
+        @reset="resetFilters"
+    />
   </v-main>
 </template>
 
@@ -84,16 +94,18 @@ import apiStatus from "@/api/api_statuses.js";
 import HistoryModal from "@/components/HistoryModal.vue";
 import apiPassport from "@/api/api_passport.js";
 import apiDriverLicense from "@/api/api_driverLicense.js";
+import FilterModal from "@/components/FilterModal.vue";
 
 export default {
   components: {
     HistoryModal,
     DataTable,
-    Modal
+    Modal,
+    FilterModal
   },
-  data(){
-    return{
-      api:api,
+  data() {
+    return {
+      api: api,
       ordersList: [],
       couriersMap: {},
       aggregatorsMap: {},
@@ -107,6 +119,75 @@ export default {
       showOrderHistoryModal: false,
       historyOrder: null,
       searchQuery: '',
+      filterModalVisible: false,
+      partialMatch: false,
+      filterFields: [
+        {
+          key: 'aggregatorId',
+          label: 'Агрегатор',
+          type: 'select',
+          items: [],
+          itemTitle: 'name',
+          itemValue: 'id'
+        },
+        {
+          key: 'statusId',
+          label: 'Статус',
+          type: 'select',
+          items: [],
+          itemTitle: 'status_name',
+          itemValue: 'id'
+        },
+        {
+          key: 'courierId',
+          label: 'Курьер',
+          type: 'select',
+          items: [],
+          itemTitle: 'fullName',
+          itemValue: 'id'
+        },
+        {
+          key: 'transportId',
+          label: 'Транспорт',
+          type: 'select',
+          items: [],
+          itemTitle: 'code',
+          itemValue: 'id'
+        },
+        {
+          key: 'bagId',
+          label: 'Сумка',
+          type: 'select',
+          items: [],
+          itemTitle: 'code',
+          itemValue: 'id'
+        },
+        {
+          key: 'jacketId',
+          label: 'Куртка',
+          type: 'select',
+          items: [],
+          itemTitle: 'code',
+          itemValue: 'id'
+        },
+        {
+          key: 'startDateRange',
+          type: 'daterange',
+          startKey: 'startDateFrom',
+          endKey: 'startDateTo',
+          startLabel: 'Дата начала от',
+          endLabel: 'Дата начала до'
+        },
+        {
+          key: 'endDateRange',
+          type: 'daterange',
+          startKey: 'endDateFrom',
+          endKey: 'endDateTo',
+          startLabel: 'Дата окончания от',
+          endLabel: 'Дата окончания до'
+        }
+      ],
+      currentFilters: {},
 
       modal: {
         show: false,
@@ -116,53 +197,139 @@ export default {
       },
 
       columns: [
-        {key: 'actions', title: 'Действия' },
-        {key: 'created_at', title: 'Дата создания'},
-        {key: 'aggregator_id', title: 'Аггрегатор'},
-        {key: 'courier_id', title: 'Курьер'},
-        {key: 'transport_id', title: 'Транспорт'},
-        {key: 'bag_id', title: 'Сумка курьера'},
-        {key: 'jacket_id', title: 'Куртка курьера'},
-        {key: 'status_id', title: 'Статус'},
-        {key: 'start_date', title: 'Дата начала смены'},
-        {key: 'end_date', title: 'Дата окончания смены'},
-
+        { key: 'actions', title: 'Действия' },
+        { key: 'created_at', title: 'Дата создания' },
+        { key: 'aggregator_id', title: 'Аггрегатор' },
+        { key: 'courier_id', title: 'Курьер' },
+        { key: 'transport_id', title: 'Транспорт' },
+        { key: 'bag_id', title: 'Сумка курьера' },
+        { key: 'jacket_id', title: 'Куртка курьера' },
+        { key: 'status_id', title: 'Статус' },
+        { key: 'start_date', title: 'Дата начала смены' },
+        { key: 'end_date', title: 'Дата окончания смены' }
       ]
-    }
+    };
   },
   computed: {
     filteredItems() {
-      if (!this.searchQuery) return this.ordersList;
-      const q = this.searchQuery.toLowerCase().trim();
-      return this.ordersList.filter(item => {
-        const courierName = this.getCourierName(item.courier_id).toLowerCase();
-        const aggregatorName = this.getAggregatorName(item.aggregator_id).toLowerCase();
-        const transportCode = this.getTransportCode(item.transport_id).toLowerCase();
-        const bagCode = this.getDeliveryBagsCode(item.bag_id).toLowerCase();
-        const jacketCode = this.getDeliveryJacketsCode(item.jacket_id).toLowerCase();
-        const statusName = this.getStatusName(item.status_id).toLowerCase();
-        const startDate = this.formatDateAndTime(item.start_date);
-        const endDate = this.formatDateAndTime(item.end_date);
-        return (
-            courierName.includes(q) ||
-            aggregatorName.includes(q) ||
-            transportCode.includes(q) ||
-            bagCode.includes(q) ||
-            jacketCode.includes(q) ||
-            statusName.includes(q) ||
-            startDate.includes(q) ||
-            endDate.includes(q)
-        );
-      });
-    },
+      let result = this.ordersList;
+
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase().trim();
+        result = result.filter(item => {
+          const courierName = this.getCourierName(item.courier_id).toLowerCase();
+          const aggregatorName = this.getAggregatorName(item.aggregator_id).toLowerCase();
+          const transportCode = this.getTransportCode(item.transport_id).toLowerCase();
+          const bagCode = this.getDeliveryBagsCode(item.bag_id).toLowerCase();
+          const jacketCode = this.getDeliveryJacketsCode(item.jacket_id).toLowerCase();
+          const statusName = this.getStatusName(item.status_id).toLowerCase();
+          const startDate = this.formatDateAndTime(item.start_date);
+          const endDate = this.formatDateAndTime(item.end_date);
+          return (
+              courierName.includes(q) ||
+              aggregatorName.includes(q) ||
+              transportCode.includes(q) ||
+              bagCode.includes(q) ||
+              jacketCode.includes(q) ||
+              statusName.includes(q) ||
+              startDate.includes(q) ||
+              endDate.includes(q)
+          );
+        });
+      }
+
+      if (!this.partialMatch) {
+        if (this.currentFilters.aggregatorId) {
+          result = result.filter(item => item.aggregator_id === this.currentFilters.aggregatorId);
+        }
+        if (this.currentFilters.statusId) {
+          result = result.filter(item => item.status_id === this.currentFilters.statusId);
+        }
+        if (this.currentFilters.courierId) {
+          result = result.filter(item => item.courier_id === this.currentFilters.courierId);
+        }
+        if (this.currentFilters.transportId) {
+          result = result.filter(item => item.transport_id === this.currentFilters.transportId);
+        }
+        if (this.currentFilters.bagId) {
+          result = result.filter(item => item.bag_id === this.currentFilters.bagId);
+        }
+        if (this.currentFilters.jacketId) {
+          result = result.filter(item => item.jacket_id === this.currentFilters.jacketId);
+        }
+
+        if (this.currentFilters.startDateFrom && this.currentFilters.startDateTo) {
+          const start = new Date(this.currentFilters.startDateFrom).getTime() / 1000;
+          const end = new Date(this.currentFilters.startDateTo).getTime() / 1000 + 86400 - 1;
+          result = result.filter(item => item.start_date >= start && item.start_date <= end);
+        } else if (this.currentFilters.startDateFrom) {
+          const start = new Date(this.currentFilters.startDateFrom).getTime() / 1000;
+          result = result.filter(item => item.start_date >= start);
+        } else if (this.currentFilters.startDateTo) {
+          const end = new Date(this.currentFilters.startDateTo).getTime() / 1000 + 86400 - 1;
+          result = result.filter(item => item.start_date <= end);
+        }
+
+        if (this.currentFilters.endDateFrom && this.currentFilters.endDateTo) {
+          const start = new Date(this.currentFilters.endDateFrom).getTime() / 1000;
+          const end = new Date(this.currentFilters.endDateTo).getTime() / 1000 + 86400 - 1;
+          result = result.filter(item => {
+            if (!item.end_date) return false;
+            return item.end_date >= start && item.end_date <= end;
+          });
+        } else if (this.currentFilters.endDateFrom) {
+          const start = new Date(this.currentFilters.endDateFrom).getTime() / 1000;
+          result = result.filter(item => item.end_date >= start);
+        } else if (this.currentFilters.endDateTo) {
+          const end = new Date(this.currentFilters.endDateTo).getTime() / 1000 + 86400 - 1;
+          result = result.filter(item => item.end_date <= end);
+        }
+      } else {
+        result = result.filter(item => {
+          let match = false;
+
+          if (this.currentFilters.aggregatorId && item.aggregator_id === this.currentFilters.aggregatorId) match = true;
+          if (this.currentFilters.statusId && item.status_id === this.currentFilters.statusId) match = true;
+          if (this.currentFilters.courierId && item.courier_id === this.currentFilters.courierId) match = true;
+          if (this.currentFilters.transportId && item.transport_id === this.currentFilters.transportId) match = true;
+          if (this.currentFilters.bagId && item.bag_id === this.currentFilters.bagId) match = true;
+          if (this.currentFilters.jacketId && item.jacket_id === this.currentFilters.jacketId) match = true;
+
+          if (this.currentFilters.startDateFrom && this.currentFilters.startDateTo) {
+            const start = new Date(this.currentFilters.startDateFrom).getTime() / 1000;
+            const end = new Date(this.currentFilters.startDateTo).getTime() / 1000 + 86400 - 1;
+            if (item.start_date >= start && item.start_date <= end) match = true;
+          } else if (this.currentFilters.startDateFrom) {
+            const start = new Date(this.currentFilters.startDateFrom).getTime() / 1000;
+            if (item.start_date >= start) match = true;
+          } else if (this.currentFilters.startDateTo) {
+            const end = new Date(this.currentFilters.startDateTo).getTime() / 1000 + 86400 - 1;
+            if (item.start_date <= end) match = true;
+          }
+
+          if (this.currentFilters.endDateFrom && this.currentFilters.endDateTo) {
+            const start = new Date(this.currentFilters.endDateFrom).getTime() / 1000;
+            const end = new Date(this.currentFilters.endDateTo).getTime() / 1000 + 86400 - 1;
+            if (item.end_date && item.end_date >= start && item.end_date <= end) match = true;
+          } else if (this.currentFilters.endDateFrom) {
+            const start = new Date(this.currentFilters.endDateFrom).getTime() / 1000;
+            if (item.end_date && item.end_date >= start) match = true;
+          } else if (this.currentFilters.endDateTo) {
+            const end = new Date(this.currentFilters.endDateTo).getTime() / 1000 + 86400 - 1;
+            if (item.end_date && item.end_date <= end) match = true;
+          }
+
+          return match;
+        });
+      }
+
+      return result;
+    }
   },
-  async created(){
-    await this.loadData()
+  async created() {
+    await this.loadData();
   },
-  methods:{
-    onSearchChange(val) {
-      this.searchQuery = val.toLowerCase().trim();
-    },
+  methods: {
     async loadData() {
       this.loading = true;
       try {
@@ -176,12 +343,61 @@ export default {
           this.fetchStatus(),
           this.fetchPassportNumber(),
           this.fetchDriverLicenseNumber(),
+          this.fetchFilterOptions()
         ]);
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
       } finally {
         this.loading = false;
       }
+    },
+
+    async fetchFilterOptions() {
+      const aggData = await apiAggregators.getAllAggregators();
+      const aggregators = aggData.items || aggData || [];
+      const aggregatorField = this.filterFields.find(f => f.key === 'aggregatorId');
+      if (aggregatorField) aggregatorField.items = aggregators;
+
+      const statusData = await apiStatus.getAllStatuses();
+      const statuses = statusData.items || statusData || [];
+      const statusField = this.filterFields.find(f => f.key === 'statusId');
+      if (statusField) statusField.items = statuses;
+
+      const couriersData = await apiCouriers.getAllCouriers();
+      let couriers = couriersData.items || couriersData || [];
+      const courierItems = couriers.map(c => ({
+        id: c.id,
+        fullName: `${c.lastName || ''} ${c.firstName || ''}`.trim() || `Курьер #${c.id}`
+      }));
+      const courierField = this.filterFields.find(f => f.key === 'courierId');
+      if (courierField) courierField.items = courierItems;
+
+      const transportData = await apiTransport.getAllTransport();
+      let transports = transportData.items || transportData || [];
+      const transportItems = transports.map(t => ({
+        id: t.id,
+        code: t.code || `Транспорт #${t.id}`
+      }));
+      const transportField = this.filterFields.find(f => f.key === 'transportId');
+      if (transportField) transportField.items = transportItems;
+
+      const bagsData = await apiDeliveryBags.getAllDeliveryBags();
+      let bags = bagsData.items || bagsData || [];
+      const bagItems = bags.map(b => ({
+        id: b.id,
+        code: b.code || `Сумка #${b.id}`
+      }));
+      const bagField = this.filterFields.find(f => f.key === 'bagId');
+      if (bagField) bagField.items = bagItems;
+
+      const jacketsData = await apiDeliveryJackets.getAllDeliveryJackets();
+      let jackets = jacketsData.items || jacketsData || [];
+      const jacketItems = jackets.map(j => ({
+        id: j.id,
+        code: j.code || `Куртка #${j.id}`
+      }));
+      const jacketField = this.filterFields.find(f => f.key === 'jacketId');
+      if (jacketField) jacketField.items = jacketItems;
     },
 
     async fetchOrders() {
@@ -203,8 +419,8 @@ export default {
       }
     },
 
-    async fetchCouriers(){
-      try{
+    async fetchCouriers() {
+      try {
         const response = await apiCouriers.getAllCouriers();
         let couriersArray = [];
         if (response?.items) {
@@ -222,13 +438,13 @@ export default {
             this.couriersMap[`full_${courier.id}`] = courier;
           }
         });
-      }catch(error){
+      } catch (error) {
         console.error('Ошибка загрузки курьеров:', error);
       }
     },
 
-    async fetchAggregators(){
-      try{
+    async fetchAggregators() {
+      try {
         const response = await apiAggregators.getAllAggregators();
         let aggregatorsArray = [];
         if (response?.items) {
@@ -245,13 +461,13 @@ export default {
             this.aggregatorsMap[`full_${aggregator.id}`] = aggregator;
           }
         });
-      }catch(error){
+      } catch (error) {
         console.error('Ошибка загрузки агрегаторов:', error);
       }
     },
 
-    async fetchTransports(){
-      try{
+    async fetchTransports() {
+      try {
         const response = await apiTransport.getAllTransport();
         let transportsArray = [];
         if (response?.items) {
@@ -268,13 +484,13 @@ export default {
             this.transportsMap[`full_${transport.id}`] = transport;
           }
         });
-      }catch(error){
+      } catch (error) {
         console.error('Ошибка загрузки транспорта:', error);
       }
     },
 
-    async fetchBags(){
-      try{
+    async fetchBags() {
+      try {
         const response = await apiDeliveryBags.getAllDeliveryBags();
         let bagsArray = [];
         if (response?.items) {
@@ -291,13 +507,13 @@ export default {
             this.bagsMap[`full_${bag.id}`] = bag;
           }
         });
-      }catch(error){
+      } catch (error) {
         console.error('Ошибка загрузки сумок:', error);
       }
     },
 
-    async fetchJackets(){
-      try{
+    async fetchJackets() {
+      try {
         const response = await apiDeliveryJackets.getAllDeliveryJackets();
         let jacketsArray = [];
         if (response?.items) {
@@ -314,13 +530,13 @@ export default {
             this.jacketsMap[`full_${jacket.id}`] = jacket;
           }
         });
-      }catch(error){
+      } catch (error) {
         console.error('Ошибка загрузки курток:', error);
       }
     },
 
-    async fetchStatus(){
-      try{
+    async fetchStatus() {
+      try {
         const response = await apiStatus.getAllStatuses();
         let statusArray = [];
         if (response?.items) {
@@ -337,7 +553,7 @@ export default {
             this.statusMap[`full_${status.id}`] = status;
           }
         });
-      }catch(error){
+      } catch (error) {
         console.error('Ошибка загрузки статусов:', error);
       }
     },
@@ -345,8 +561,6 @@ export default {
     async fetchPassportNumber() {
       try {
         const response = await apiPassport.getAllPassport();
-        console.log('Ответ API паспорта:', response);
-
         let passportArray = [];
         if (response?.items) {
           passportArray = response.items;
@@ -362,8 +576,6 @@ export default {
             this.passportNumberMap[`full_${passport.id}`] = passport;
           }
         });
-
-        console.log('Загружено паспортов:', Object.keys(this.passportNumberMap).length);
       } catch (error) {
         console.error('Ошибка загрузки паспортов:', error);
       }
@@ -372,8 +584,6 @@ export default {
     async fetchDriverLicenseNumber() {
       try {
         const response = await apiDriverLicense.getAllDriverLicense();
-        console.log('Ответ API прав:', response);
-
         let licenseArray = [];
         if (response?.items) {
           licenseArray = response.items;
@@ -389,8 +599,6 @@ export default {
             this.driverLicenseNumberMap[`full_${license.id}`] = license;
           }
         });
-
-        console.log('Загружено прав:', Object.keys(this.driverLicenseNumberMap).length);
       } catch (error) {
         console.error('Ошибка загрузки прав:', error);
       }
@@ -401,29 +609,29 @@ export default {
       let title = '';
       let fields = [];
 
-      switch(type) {
+      switch (type) {
         case 'courier':
           item = this.couriersMap[`full_${id}`] || { id, name: this.getCourierName(id) };
           title = 'Информация о курьере';
           fields = [
-            { key: 'fullName', label: 'ФИО', getValue: (item) => this.getFullName(item)},
-            { key: 'gender', label: 'Пол'},
-            { key: 'citizenship', label: 'Гражданство'},
-            { key: 'phone', label: 'Телефон'},
-            { key: 'birthDate', label: 'Дата рождения'},
-            { key: 'email', label: 'Почта'},
-            { key: 'snils', label: 'Снилс'},
-            { key: 'inn', label: 'ИНН'},
-            { key: 'passport_id', label: 'Паспорт', getValue: (item) => this.getPassportNumber(item.passport_id)},
-            { key: 'driverLicense_id', label: 'Водительские права',getValue: (item) => this.getDriverLicenseNumber(item.driverLicense_id)},
+            { key: 'fullName', label: 'ФИО', getValue: (item) => this.getFullName(item) },
+            { key: 'gender', label: 'Пол' },
+            { key: 'citizenship', label: 'Гражданство' },
+            { key: 'phone', label: 'Телефон' },
+            { key: 'birthDate', label: 'Дата рождения' },
+            { key: 'email', label: 'Почта' },
+            { key: 'snils', label: 'Снилс' },
+            { key: 'inn', label: 'ИНН' },
+            { key: 'passport_id', label: 'Паспорт', getValue: (item) => this.getPassportNumber(item.passport_id) },
+            { key: 'driverLicense_id', label: 'Водительские права', getValue: (item) => this.getDriverLicenseNumber(item.driverLicense_id) }
           ];
           break;
-          case 'transport':
+        case 'transport':
           item = this.transportsMap[`full_${id}`] || { id, code: this.getTransportCode(id) };
           title = 'Информация о транспорте';
           fields = [
             { key: 'code', label: 'Код' },
-            { key: 'aggregator_id', label: 'Аггрегатор', getValue: (item) => this.getAggregatorName(item.aggregator_id) },
+            { key: 'aggregator_id', label: 'Агрегатор', getValue: (item) => this.getAggregatorName(item.aggregator_id) }
           ];
           break;
         case 'bag':
@@ -431,8 +639,7 @@ export default {
           title = 'Информация о сумке';
           fields = [
             { key: 'code', label: 'Код' },
-            { key: 'aggregator_id', label: 'Аггрегатор', getValue: (item) => this.getAggregatorName(item.aggregator_id) },
-
+            { key: 'aggregator_id', label: 'Агрегатор', getValue: (item) => this.getAggregatorName(item.aggregator_id) }
           ];
           break;
         case 'jacket':
@@ -440,8 +647,7 @@ export default {
           title = 'Информация о куртке';
           fields = [
             { key: 'code', label: 'Код' },
-            { key: 'aggregator_id', label: 'Аггрегатор', getValue: (item) => this.getAggregatorName(item.aggregator_id) },
-
+            { key: 'aggregator_id', label: 'Агрегатор', getValue: (item) => this.getAggregatorName(item.aggregator_id) }
           ];
           break;
       }
@@ -506,13 +712,30 @@ export default {
       return this.statusMap[id] || `ID: ${id}`;
     },
 
+    onSearchChange(val) {
+      this.searchQuery = val.toLowerCase().trim();
+    },
+
+    openFilters() {
+      this.filterModalVisible = true;
+    },
+    applyFilters(filters) {
+      this.partialMatch = filters._partialMatch || false;
+
+      this.currentFilters = filters;
+    },
+    resetFilters() {
+      this.currentFilters = {};
+      this.partialMatch = false;
+    },
+
     formatDate(timestamp) {
       if (!timestamp) return '—';
       const date = new Date(parseInt(timestamp) * 1000);
       return date.toLocaleString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
-        year: 'numeric',
+        year: 'numeric'
       });
     },
 
@@ -524,7 +747,7 @@ export default {
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
       });
     }
   }

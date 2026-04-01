@@ -8,6 +8,8 @@
         :show-change-password-button="true"
         @change-password="openPasswordModal"
         @update:search-value="onSearchChange"
+        @filters="openFilters"
+        :show-filter-button="true"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -16,18 +18,20 @@
       <template #item.isBlocked="{ item }">
         <div v-if="isAdmin" class="d-flex align-center" style="gap: 4px;">
           <v-switch
-              v-model="item.isBlocked"
-              hide-details
-              inset
-              size="x-small"
-              density="compact"
-              @update:model-value="toggleBlock(item)"
+              :model-value="!item.isBlocked"
+          hide-details
+          inset
+          size="x-small"
+          density="compact"
+          color="success"
+          base-color="error"
+          @update:model-value="(val) => { item.isBlocked = !val; toggleBlock(item); }"
           />
-          <span style="font-size: 14px;">
+          <span :class="item.isBlocked ? 'status-blocked' : 'status-active'" style="font-size: 14px;">
       {{ item.isBlocked ? 'Заблокирован' : 'Активен' }}
     </span>
         </div>
-        <span v-else style="font-size: 14px;">
+        <span v-else :class="item.isBlocked ? 'status-blocked' : 'status-active'" style="font-size: 14px;">
     {{ item.isBlocked ? 'Заблокирован' : 'Активен' }}
   </span>
       </template>
@@ -41,6 +45,14 @@
         :api-method="resetPassword"
         @created="onPasswordChanged"
     />
+
+    <FilterModal
+        v-model="filterModalVisible"
+        :fields="filterFields"
+        :initial-filters="currentFilters"
+        @apply="applyFilters"
+        @reset="resetFilters"
+    />
   </v-main>
 </template>
 
@@ -48,11 +60,13 @@
 import DataTable from '@/components/DataTable.vue'
 import api from "@/api/api_aggregator.js";
 import Modal from "@/components/Modal.vue";
+import FilterModal from "@/components/FilterModal.vue";
 
 export default {
   components: {
     Modal,
-    DataTable
+    DataTable,
+    FilterModal
   },
   data() {
     return {
@@ -62,6 +76,22 @@ export default {
       showPasswordModal: false,
       selectedAggregator: null,
       searchQuery: '',
+      filterModalVisible: false,
+      filterFields: [
+        {
+          key: 'status',
+          label: 'Статус',
+          type: 'select',
+          items: [
+            { title: 'Все', value: null },
+            { title: 'Активен', value: false },
+            { title: 'Заблокирован', value: true }
+          ],
+          itemTitle: 'title',
+          itemValue: 'value'
+        }
+      ],
+      currentFilters: {},
       columns: [
         { key: 'actions', title: 'Действия' },
         { key: 'isBlocked', title: 'Статус' },
@@ -79,16 +109,22 @@ export default {
       return !!localStorage.getItem('admin');
     },
     filteredItems() {
-      if (!this.searchQuery) return this.aggregatorList;
+      let result = this.aggregatorList;
 
-      const q = this.searchQuery.toLowerCase().trim();
-      return this.aggregatorList.filter(item => {
-        const blockedText = item.isBlocked ? 'Заблокирован' : 'Активен';
-        return (
-            (item.name?.toLowerCase().includes(q)) ||
-            (blockedText.toLowerCase().includes(q))
-        );
-      });
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase().trim();
+        result = result.filter(item => {
+          return (
+              (item.name?.toLowerCase().includes(q))
+          );
+        });
+      }
+
+      if (this.currentFilters.status !== undefined && this.currentFilters.status !== null) {
+        result = result.filter(item => item.isBlocked === this.currentFilters.status);
+      }
+
+      return result;
     }
   },
   async created() {
@@ -137,8 +173,19 @@ export default {
         item.isBlocked = !item.isBlocked;
       }
     },
+
     onSearchChange(val) {
       this.searchQuery = val.toLowerCase().trim();
+    },
+
+    openFilters() {
+      this.filterModalVisible = true;
+    },
+    applyFilters(filters) {
+      this.currentFilters = filters;
+    },
+    resetFilters() {
+      this.currentFilters = {};
     },
   }
 }
@@ -148,5 +195,12 @@ export default {
 :deep(.v-switch) {
   transform: scale(0.7);
   transform-origin: left center;
+}
+
+.status-active {
+  color: #2e7d32;
+}
+.status-blocked {
+  color: #c62828;
 }
 </style>

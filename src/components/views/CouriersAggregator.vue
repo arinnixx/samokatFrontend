@@ -6,6 +6,8 @@
         :items="filteredItems"
         :loading="loading"
         @update:search-value="onSearchChange"
+        @filters="openFilters"
+        :show-filter-button="true"
     >
       <template v-slot:item.created_at="{ item }">
         {{ formatDate(item.created_at) }}
@@ -27,6 +29,14 @@
         {{ getAggregatorName(item.aggregator_id) }}
       </template>
     </DataTable>
+
+    <FilterModal
+        v-model="filterModalVisible"
+        :fields="filterFields"
+        :initial-filters="currentFilters"
+        @apply="applyFilters"
+        @reset="resetFilters"
+    />
   </v-main>
 </template>
 
@@ -35,10 +45,12 @@ import DataTable from '@/components/DataTable.vue'
 import api from "@/api/api_couriersAggregator.js";
 import apiCouriers from "@/api/api_couriers.js";
 import apiAggregators from "@/api/api_aggregator.js";
+import FilterModal from "@/components/FilterModal.vue";
 
 export default {
   components: {
-    DataTable
+    DataTable,
+    FilterModal,
   },
   data(){
     return{
@@ -47,6 +59,18 @@ export default {
       aggregatorsMap: {},
       loading: false,
       searchQuery: '',
+      filterModalVisible: false,
+      filterFields: [
+        {
+          key: 'aggregatorId',
+          label: 'Агрегатор',
+          type: 'select',
+          items: [],
+          itemTitle: 'name',
+          itemValue: 'id'
+        }
+      ],
+      currentFilters: {},
       columns: [
         {key: 'created_at', title: 'Дата создания'},
         {key: 'start_date', title: 'Дата начала работы'},
@@ -58,20 +82,29 @@ export default {
   },
   computed: {
     filteredItems() {
-      if (!this.searchQuery) return this.couriersAggregatorList;
-      const q = this.searchQuery.toLowerCase().trim();
-      return this.couriersAggregatorList.filter(item => {
-        const courierName = this.getCourierName(item.couriers_id).toLowerCase();
-        const aggregatorName = this.getAggregatorName(item.aggregator_id).toLowerCase();
-        const startDate = this.formatDate(item.start_date);
-        const endDate = this.formatDate(item.end_date);
-        return (
-            courierName.includes(q) ||
-            aggregatorName.includes(q) ||
-            startDate.includes(q) ||
-            endDate.includes(q)
-        );
-      });
+      let result = this.couriersAggregatorList;
+
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase().trim();
+        result = result.filter(item => {
+          const courierName = this.getCourierName(item.couriers_id).toLowerCase();
+          const aggregatorName = this.getAggregatorName(item.aggregator_id).toLowerCase();
+          const startDate = this.formatDate(item.start_date);
+          const endDate = this.formatDate(item.end_date);
+          return (
+              courierName.includes(q) ||
+              aggregatorName.includes(q) ||
+              startDate.includes(q) ||
+              endDate.includes(q)
+          );
+        });
+      }
+
+      if (this.currentFilters.aggregatorId) {
+        result = result.filter(item => item.aggregator_id === this.currentFilters.aggregatorId);
+      }
+
+      return result;
     },
   },
   async created(){
@@ -84,7 +117,8 @@ export default {
         await Promise.all([
           this.fetchCouriersAggregator(),
           this.fetchCouriers(),
-          this.fetchAggregators()
+          this.fetchAggregators(),
+          this.fetchAggregatorsForFilter()
         ]);
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
@@ -157,6 +191,13 @@ export default {
       }
     },
 
+    async fetchAggregatorsForFilter() {
+      const data = await apiAggregators.getAllAggregators();
+      const aggregators = data.items || data || [];
+      const aggregatorField = this.filterFields.find(f => f.key === 'aggregatorId');
+      if (aggregatorField) aggregatorField.items = aggregators;
+    },
+
     getCourierName(id) {
       if (!id) return '—';
       return this.couriersMap[id] || `ID: ${id}`;
@@ -179,7 +220,17 @@ export default {
         month: '2-digit',
         year: 'numeric',
       });
-    }
+    },
+
+    openFilters() {
+      this.filterModalVisible = true;
+    },
+    applyFilters(filters) {
+      this.currentFilters = filters;
+    },
+    resetFilters() {
+      this.currentFilters = {};
+    },
   }
 }
 </script>

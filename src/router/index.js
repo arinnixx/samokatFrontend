@@ -15,6 +15,8 @@ import DeliveryJackets from "@/components/views/DeliveryJackets.vue";
 import Orders from "@/components/views/Orders.vue";
 import Transport from "@/components/views/Transport.vue";
 import TransportTypes from "@/components/views/TransportTypes.vue";
+import Obdii from "@/components/views/Obdii.vue";
+import TransportObdii from "@/components/views/TransportObdii.vue";
 
 const ROLES = {
     ADMIN: 'admin',
@@ -138,7 +140,17 @@ const routes = [
             showSidebar: true,
             allowedRoles: [ROLES.ADMIN]
         }
-    }
+    },
+    {
+        path: '/obdii',
+        component: Obdii,
+        meta: {
+            requiresAuth: true,
+            showSidebar: true,
+            allowedRoles: [ROLES.ADMIN]
+        }
+    },
+
 ];
 
 const router = createRouter({

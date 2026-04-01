@@ -47,6 +47,7 @@
         </div>
         <div class="filter-buttons">
           <v-btn
+              v-if="showFilterButton"
               variant="outlined"
               class="filter-button"
               @click="$emit('filters')"
@@ -161,6 +162,7 @@ const props = defineProps({
     default: ''
   },
   showAddButton: { type: Boolean, default: false },
+  showFilterButton: { type: Boolean, default: false },
   addButtonText: { type: String, default: 'Создать' },
   searchPlaceholder: { type: String, default: 'Поиск...' },
   searchValue: { type: String, default: '' },
